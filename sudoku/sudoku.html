@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Game</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 24px;
+            color: #333;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        select, button {
+            padding: 10px 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        select {
+            background-color: white;
+            min-width: 120px;
+            appearance: menulist;
+        }
+
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            transition: background-color 0.2s, transform 0.1s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: #3a7bc8;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Board styling - completely revised to match original */
+        .board {
+            display: grid;
+            grid-template-rows: repeat(9, 40px);
+            grid-template-columns: repeat(9, 40px);
+            margin-bottom: 24px;
+            border: 4px solid #333;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 500;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .cell.original {
+            font-weight: bold;
+            background-color: #f8f8f8;
+        }
+
+        .cell.selected {
+            background-color: #e3f2fd;
+        }
+
+        /* Grid lines */
+        .board {
+            position: relative;
+        }
+
+        /* Create the 3x3 grid borders */
+        .cell[data-col="2"], .cell[data-col="5"] {
+            border-right: 2px solid #333;
+        }
+
+        .cell[data-row="2"], .cell[data-row="5"] {
+            border-bottom: 2px solid #333;
+        }
+
+        /* Remove right border from last column */
+        .cell[data-col="8"] {
+            border-right: 1px solid #ccc;
+        }
+
+        /* Remove bottom border from last row */
+        .cell[data-row="8"] {
+            border-bottom: 1px solid #ccc;
+        }
+
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .number-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .number-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .number-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            margin-top: 24px;
+        }
+
+        .clear-btn {
+            background-color: #e74c3c;
+        }
+
+        .clear-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .solve-btn {
+            background-color: #2ecc71;
+        }
+
+        .solve-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .check-btn {
+            background-color: #f39c12;
+        }
+
+        .check-btn:hover {
+            background-color: #d35400;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 16px;
+            font-weight: 500;
+            box-sizing: border-box;
+        }
+
+        .status-message.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .status-message.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-message.info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 500px) {
+            .board {
+                grid-template-rows: repeat(9, 35px);
+                grid-template-columns: repeat(9, 35px);
+            }
+
+            .cell {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+
+            .number-pad {
+                grid-template-columns: repeat(3, 45px);
+                grid-template-rows: repeat(3, 45px);
+            }
+
+            .number-btn {
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        /* Install button for PWA */
+        #install-button {
+            display: none;
+            margin-top: 16px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #install-button:hover {
+            background-color: #3a7bc8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sudoku Game</h1>
+
+        <div class="controls">
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="expert">Expert</option>
+            </select>
+
+            <button id="new-game-btn">New Game</button>
+        </div>
+
+        <div id="board" class="board"></div>
+
+        <div id="number-pad" class="number-pad">
+            <!-- Numbers 1-9 will be added here by JavaScript -->
+        </div>
+
+        <div class="action-buttons">
+            <button id="clear-btn" class="clear-btn">Clear</button>
+            <button id="solve-btn" class="solve-btn">Solve</button>
+            <button id="check-btn" class="check-btn">Check</button>
+        </div>
+
+        <div id="status-message" class="status-message" style="display: none;"></div>
+
+        <button id="install-button">Install App</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game state
+            let board = Array(9).fill().map(() => Array(9).fill(0));
+            let userBoard = Array(9).fill().map(() => Array(9).fill(0));
+            let selectedCell = null;
+            let isComplete = false;
+            let isCorrect = false;
+            let isSolved = false;
+
+            // DOM elements
+            const boardElement = document.getElementById('board');
+            const difficultySelect = document.getElementById('difficulty');
+            const newGameBtn = document.getElementById('new-game-btn');
+            const numberPad = document.getElementById('number-pad');
+            const clearBtn = document.getElementById('clear-btn');
+            const solveBtn = document.getElementById('solve-btn');
+            const checkBtn = document.getElementById('check-btn');
+            const statusMessage = document.getElementById('status-message');
+            const installButton = document.getElementById('install-button');
+
+            // Initialize the game
+            initializeGame();
+
+            // Event listeners
+            difficultySelect.addEventListener('change', generateNewBoard);
+            newGameBtn.addEventListener('click', generateNewBoard);
+            clearBtn.addEventListener('click', clearCell);
+            solveBtn.addEventListener('click', solvePuzzle);
+            checkBtn.addEventListener('click', checkCurrentSolution);
+
+            // Initialize number pad
+            for (let i = 1; i <= 9; i++) {
+                const numBtn = document.createElement('button');
+                numBtn.className = 'number-btn';
+                numBtn.textContent = i;
+                numBtn.addEventListener('click', () => handleNumberInput(i));
+                numberPad.appendChild(numBtn);
+            }
+
+            function initializeGame() {
+                renderBoard();
+                generateNewBoard();
+            }
+
+            function renderBoard() {
+                boardElement.innerHTML = '';
+
+                for (let row = 0; row < 9; row++) {
+                    for (let col = 0; col < 9; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+
+                        const value = userBoard[row][col];
+                        if (value !== 0) {
+                            cell.textContent = value;
+                        }
+
+                        if (board[row][col] !== 0) {
+                            cell.classList.add('original');
+                        }
+
+                        if (selectedCell && selectedCell[0] === row && selectedCell[1] === col) {
+                            cell.classList.add('selected');
+                        }
+
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        boardElement.appendChild(cell);
+                    }
+                }
+            }
+
+            function generateNewBoard() {
+                isComplete = false;
+                isCorrect = false;
+                isSolved = false;
+                setStatusMessage('', '');
+
+                // Generate a complete, valid Sudoku solution
+                const solution = generateSolution();
+
+                // Create a puzzle by removing numbers from the solution
+                const difficulty = difficultySelect.value;
+                const { puzzle, solvedBoard } = generatePuzzle(solution, difficulty);
+
+                board = puzzle;
+                userBoard = puzzle.map(row => [...row]);
+                selectedCell = null;
+
+                renderBoard();
+            }
+
+            function generateSolution() {
+                // Start with an empty board
+                const solution = Array(9).fill().map(() => Array(9).fill(0));
+
+                // Fill the board using backtracking
+                solveSudoku(solution);
+                return solution;
+            }
+
+            function solveSudoku(board) {
+                // Find an empty cell
+                const emptyCell = findEmptyCell(board);
+
+                // If no empty cell is found, the board is solved
+                if (!emptyCell) return true;
+
+                const [row, col] = emptyCell;
+
+                // Try filling the cell with numbers 1-9
+                const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                // Shuffle numbers for randomness
+                shuffleArray(nums);
+
+                for (let num of nums) {
+                    // If the number is valid in the current position
+                    if (isValid(board, row, col, num)) {
+                        // Place the number
+                        board[row][col] = num;
+
+                        // Recursively try to solve the rest of the board
+                        if (solveSudoku(board)) {
+                            return true;
+                        }
+
+                        // If placing the number doesn't lead to a solution, backtrack
+                        board[row][col] = 0;
+                    }
+                }
+
+                // No solution found with current configuration
+                return false;
+            }
+
+            function findEmptyCell(board) {
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        if (board[i][j] === 0) {
+                            return [i, j];
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function isValid(board, row, col, num) {
+                // Check row
+                for (let i = 0; i < 9; i++) {
+                    if (board[row][i] === num) {
+                        return false;
+                    }
+                }
+
+                // Check column
+                for (let i = 0; i < 9; i++) {
+                    if (board[i][col] === num) {
+                        return false;
+                    }
+                }
+
+                // Check 3x3 box
+                const boxRow = Math.floor(row / 3) * 3;
+                const boxCol = Math.floor(col / 3) * 3;
+
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        if (board[boxRow + i][boxCol + j] === num) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function generatePuzzle(solution, difficulty) {
+                // Make a deep copy of the solution
+                const puzzle = solution.map(row => [...row]);
+                const solvedBoard = solution.map(row => [...row]);
+
+                // Number of cells to remove based on difficulty
+                let cellsToRemove;
+                switch (difficulty) {
+                    case 'easy':
+                        cellsToRemove = 40; // 41 cells removed (40 clues left)
+                        break;
+                    case 'medium':
+                        cellsToRemove = 52; // 53 cells removed (28 clues left)
+                        break;
+                    case 'hard':
+                        cellsToRemove = 58; // 59 cells removed (22 clues left)
+                        break;
+                    case 'expert':
+                        cellsToRemove = 62; // 63 cells removed (18 clues left)
+                        break;
+                    default:
+                        cellsToRemove = 52;
+                }
+
+                // Create an array of all positions
+                const positions = [];
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        positions.push([i, j]);
+                    }
+                }
+
+                // Shuffle the positions
+                shuffleArray(positions);
+
+                // Remove numbers one by one
+                for (let i = 0; i < cellsToRemove; i++) {
+                    const [row, col] = positions[i];
+                    puzzle[row][col] = 0;
+                }
+
+                return { puzzle, solvedBoard };
+            }
+
+            function handleCellClick(row, col) {
+                if (board[row][col] === 0) {
+                    selectedCell = [row, col];
+                    renderBoard();
+                }
+            }
+
+            function handleNumberInput(num) {
+                if (selectedCell && board[selectedCell[0]][selectedCell[1]] === 0) {
+                    const [row, col] = selectedCell;
+                    userBoard[row][col] = num;
+                    renderBoard();
+
+                    // Check if the board is complete
+                    const complete = !userBoard.flat().includes(0);
+                    isComplete = complete;
+
+                    if (complete) {
+                        // Check if the solution is correct
+                        const correct = checkSolution(userBoard);
+                        isCorrect = correct;
+
+                        if (correct) {
+                            setStatusMessage("Congratulations! You solved the puzzle!", "success");
+                        } else {
+                            setStatusMessage("Your solution has errors. Please check again.", "error");
+                        }
+                    }
+                }
+            }
+
+            function clearCell() {
+                if (selectedCell && board[selectedCell[0]][selectedCell[1]] === 0) {
+                    const [row, col] = selectedCell;
+                    userBoard[row][col] = 0;
+                    renderBoard();
+                    isComplete = false;
+
+                    // Clear completion messages if they exist
+                    if (statusMessage.textContent.includes("Congratulations") ||
+                        statusMessage.textContent.includes("errors")) {
+                        setStatusMessage("", "");
+                    }
+                }
+            }
+
+            function checkSolution(userBoard) {
+                // Check rows
+                for (let i = 0; i < 9; i++) {
+                    const rowSet = new Set();
+                    for (let j = 0; j < 9; j++) {
+                        if (userBoard[i][j] !== 0) {
+                            if (rowSet.has(userBoard[i][j])) {
+                                return false;
+                            }
+                            rowSet.add(userBoard[i][j]);
+                        }
+                    }
+                }
+
+                // Check columns
+                for (let j = 0; j < 9; j++) {
+                    const colSet = new Set();
+                    for (let i = 0; i < 9; i++) {
+                        if (userBoard[i][j] !== 0) {
+                            if (colSet.has(userBoard[i][j])) {
+                                return false;
+                            }
+                            colSet.add(userBoard[i][j]);
+                        }
+                    }
+                }
+
+                // Check 3x3 boxes
+                for (let boxRow = 0; boxRow < 9; boxRow += 3) {
+                    for (let boxCol = 0; boxCol < 9; boxCol += 3) {
+                        const boxSet = new Set();
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < 3; j++) {
+                                const value = userBoard[boxRow + i][boxCol + j];
+                                if (value !== 0) {
+                                    if (boxSet.has(value)) {
+                                        return false;
+                                    }
+                                    boxSet.add(value);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            function solvePuzzle() {
+                // Make a copy of the initial board
+                const boardToSolve = board.map(row => [...row]);
+
+                // Solve the puzzle
+                if (solveSudoku(boardToSolve)) {
+                    userBoard = boardToSolve;
+                    isComplete = true;
+                    isCorrect = true;
+                    isSolved = true;
+                    renderBoard();
+                    setStatusMessage("Puzzle solved automatically!", "success");
+                }
+            }
+
+            function checkCurrentSolution() {
+                // First check if the current board state is valid (no duplicates)
+                const correct = checkSolution(userBoard);
+                if (!correct) {
+                    setStatusMessage("There are errors in your solution. Check for duplicate numbers in rows, columns, or boxes.", "error");
+                    return;
+                }
+
+                // Count empty cells
+                let emptyCells = 0;
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        if (userBoard[i][j] === 0) {
+                            emptyCells++;
+                        }
+                    }
+                }
+
+                if (emptyCells > 0) {
+                    setStatusMessage(`So far so good! You still have ${emptyCells} empty cells to fill.`, "info");
+                    return;
+                }
+
+                setStatusMessage("Your solution is correct!", "success");
+            }
+
+            function setStatusMessage(text, type) {
+                if (!text) {
+                    statusMessage.style.display = 'none';
+                    return;
+                }
+
+                statusMessage.textContent = text;
+                statusMessage.style.display = 'block';
+
+                // Remove all type classes
+                statusMessage.classList.remove('error', 'success', 'info');
+
+                // Add the appropriate type class
+                if (type) {
+                    statusMessage.classList.add(type);
+                }
+            }
+
+            // PWA functionality
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(error => {
+                            console.log('ServiceWorker registration failed: ', error);
+                        });
+                });
+            }
+
+            // Handle PWA installation
+            let deferredPrompt;
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent Chrome 67 and earlier from automatically showing the prompt
+                e.preventDefault();
+                // Stash the event so it can be triggered later
+                deferredPrompt = e;
+                // Show the install button
+                installButton.style.display = 'block';
+            });
+
+            installButton.addEventListener('click', () => {
+                // Hide the install button
+                installButton.style.display = 'none';
+                // Show the prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+
+            // Handle keyboard input for numbers
+            document.addEventListener('keydown', (e) => {
+                if (selectedCell) {
+                    const key = e.key;
+                    if (/^[1-9]$/.test(key)) {
+                        handleNumberInput(parseInt(key));
+                    } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
+                        clearCell();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
