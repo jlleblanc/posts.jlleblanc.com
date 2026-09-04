@@ -114,6 +114,13 @@
             font-size: 13px;
         }
 
+        .btn-wait {
+            background: rgba(241,196,15,0.15);
+            color: #f1c40f;
+            border: 1px solid rgba(241,196,15,0.3);
+        }
+        .btn-wait:hover { background: rgba(241,196,15,0.25); }
+
         .btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -308,7 +315,7 @@
             color: #e94560;
         }
 
-        .turn-counter {
+        .game-time {
             font-size: 13px;
             color: #666;
         }
@@ -320,6 +327,34 @@
             letter-spacing: 2px;
             margin-bottom: 12px;
             margin-top: 24px;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #888;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover { background: rgba(255,255,255,0.08); }
+
+        .filter-btn.active {
+            background: rgba(233,69,96,0.15);
+            border-color: #e94560;
+            color: #e94560;
         }
 
         /* Profile Cards */
@@ -337,9 +372,7 @@
             transition: all 0.2s;
         }
 
-        .profile-card:hover {
-            border-color: rgba(233,69,96,0.3);
-        }
+        .profile-card:hover { border-color: rgba(233,69,96,0.3); }
 
         .profile-top {
             display: flex;
@@ -463,47 +496,66 @@
         .nav-btn.active { color: #e94560; }
         .nav-btn .nav-icon { font-size: 22px; }
 
-        /* Flight Screen */
-        .flight-option {
+        /* Flight Schedule */
+        .flight-schedule {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .flight-row {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            cursor: pointer;
             transition: all 0.2s;
         }
 
-        .flight-option:hover {
-            border-color: rgba(233,69,96,0.3);
-            background: rgba(255,255,255,0.06);
-        }
+        .flight-row:hover { border-color: rgba(233,69,96,0.3); }
 
-        .flight-route {
+        .flight-row-info { flex: 1; }
+        .flight-dest { font-weight: 600; font-size: 16px; }
+        .flight-dest-name { font-size: 13px; color: #888; }
+        .flight-times { font-size: 13px; color: #888; margin-top: 4px; }
+        .flight-times span { color: #e0e0e0; }
+
+        .flight-row-actions {
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
         }
 
-        .flight-arrow {
-            color: #e94560;
-            font-size: 18px;
-        }
-
-        .flight-details {
-            text-align: right;
-        }
-
-        .flight-cost {
+        .flight-cost-badge {
+            font-size: 13px;
             font-weight: 600;
             color: #e94560;
         }
 
-        .flight-time {
-            font-size: 12px;
-            color: #888;
+        .flight-book-btn {
+            padding: 6px 14px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .flight-book-btn:hover { background: #d63851; }
+        .flight-book-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .flight-delayed {
+            border-color: rgba(241,196,15,0.4) !important;
+        }
+
+        .flight-delay-tag {
+            font-size: 11px;
+            color: #f1c40f;
         }
 
         /* Encounter Screen */
@@ -515,15 +567,8 @@
             background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%);
         }
 
-        .encounter-avatar {
-            font-size: 80px;
-            margin-bottom: 8px;
-        }
-
-        .encounter-name {
-            font-size: 28px;
-            font-weight: 700;
-        }
+        .encounter-avatar { font-size: 80px; margin-bottom: 8px; }
+        .encounter-name { font-size: 28px; font-weight: 700; }
 
         .encounter-reveal {
             max-width: 360px;
@@ -533,23 +578,10 @@
             border: 1px solid rgba(255,255,255,0.08);
         }
 
-        .reveal-match {
-            font-size: 48px;
-            font-weight: 800;
-            margin: 12px 0;
-        }
+        .reveal-match { font-size: 48px; font-weight: 800; margin: 12px 0; }
+        .reveal-label { font-size: 14px; color: #888; }
 
-        .reveal-label {
-            font-size: 14px;
-            color: #888;
-        }
-
-        .encounter-activities {
-            margin-top: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .encounter-activities { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
         .activity-row {
             display: flex;
@@ -561,12 +593,7 @@
         }
 
         .activity-name { font-size: 14px; }
-
-        .activity-result {
-            font-size: 13px;
-            font-weight: 600;
-        }
-
+        .activity-result { font-size: 13px; font-weight: 600; }
         .activity-result.success { color: #2ecc71; }
         .activity-result.fail { color: #e74c3c; }
 
@@ -578,58 +605,20 @@
             border: 1px solid rgba(46,204,113,0.2);
         }
 
-        .reward-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #2ecc71;
-        }
+        .reward-text { font-size: 20px; font-weight: 700; color: #2ecc71; }
 
         /* Profile Screen */
-        .profile-screen-content {
-            max-width: 500px;
-            margin: 0 auto;
-            width: 100%;
-        }
+        .profile-screen-content { max-width: 500px; margin: 0 auto; width: 100%; }
 
-        .profile-header {
-            text-align: center;
-            padding: 24px 0;
-        }
-
+        .profile-header { text-align: center; padding: 24px 0; }
         .profile-header .char-avatar { font-size: 64px; margin-bottom: 12px; }
         .profile-header .char-name { font-size: 24px; font-weight: 700; }
 
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
 
-        .stat-card {
-            background: rgba(255,255,255,0.04);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #e94560;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 4px;
-        }
-
-        .history-section {
-            margin-top: 24px;
-        }
+        .stat-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: 700; color: #e94560; }
+        .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 
         .history-item {
             padding: 14px 16px;
@@ -646,55 +635,16 @@
         .history-detail { font-size: 13px; color: #888; margin-top: 4px; }
         .history-time { font-size: 11px; color: #555; margin-top: 4px; }
 
-        /* Modal Overlay */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 300;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
+        /* Arrival Screen */
+        #arrival-screen { align-items: center; justify-content: center; gap: 20px; text-align: center; }
 
-        .modal-overlay.open { display: flex; }
-
-        .modal {
-            background: #1a1a2e;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal h2 {
-            margin-bottom: 16px;
-            font-size: 20px;
-        }
-
-        .modal p {
-            color: #888;
-            line-height: 1.5;
-            margin-bottom: 16px;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-
-        /* Delay overlay */
         .delay-banner {
             background: rgba(241,196,15,0.1);
             border: 1px solid rgba(241,196,15,0.3);
             border-radius: 8px;
             padding: 12px 16px;
-            margin-bottom: 16px;
+            width: 100%;
+            max-width: 400px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -702,46 +652,9 @@
             color: #f1c40f;
         }
 
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #555;
-        }
-
+        .empty-state { text-align: center; padding: 40px 20px; color: #555; }
         .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 
-        /* Filter Bar */
-        .filter-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .filter-btn {
-            flex: 1;
-            padding: 10px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: #888;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover {
-            background: rgba(255,255,255,0.08);
-        }
-
-        .filter-btn.active {
-            background: rgba(233,69,96,0.15);
-            border-color: #e94560;
-            color: #e94560;
-        }
-
-        /* Responsive */
         @media (max-width: 400px) {
             .game-logo { font-size: 36px; letter-spacing: 4px; }
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -798,28 +711,44 @@
     </div>
 
     <div class="game-body">
-        <div id="delay-banner" class="delay-banner" style="display:none;"></div>
-
         <div class="location-bar">
             <div>
                 <div class="location-name">You are at</div>
                 <div class="location-code" id="current-airport-code"></div>
             </div>
-            <div class="turn-counter">
-                Turn <span id="turn-counter">1</span>
+            <div class="game-time" id="game-time-display"></div>
+        </div>
+
+        <!-- Flights Tab -->
+        <div id="flights-tab">
+            <div class="section-title">Departing Flights</div>
+            <div id="flight-schedule" class="flight-schedule"></div>
+            <div style="margin-top:16px; display:flex; gap:8px;">
+                <button class="btn btn-wait btn-small" onclick="wait()">Wait 30 min</button>
+                <button class="btn btn-secondary btn-small" onclick="showGameTab('browse')">Browse Men</button>
             </div>
         </div>
 
-        <div class="filter-bar" id="filter-bar">
-            <button class="filter-btn active" data-filter="here" onclick="setFilter('here')">At This Airport</button>
-            <button class="filter-btn" data-filter="all" onclick="setFilter('all')">All Airports</button>
+        <!-- Browse Tab -->
+        <div id="browse-tab" style="display:none;">
+            <div class="filter-bar" id="filter-bar">
+                <button class="filter-btn active" data-filter="here" onclick="setFilter('here')">At This Airport</button>
+                <button class="filter-btn" data-filter="all" onclick="setFilter('all')">All Airports</button>
+            </div>
+            <div class="section-title" id="section-title">Men at this airport</div>
+            <div id="profile-list" class="profile-list"></div>
+            <div style="margin-top:16px;">
+                <button class="btn btn-secondary btn-small" onclick="showGameTab('flights')">View Flights</button>
+            </div>
         </div>
-        <div class="section-title" id="section-title">Men at this airport</div>
-        <div id="profile-list" class="profile-list"></div>
     </div>
 
     <div class="bottom-nav">
-        <button class="nav-btn active" onclick="showGameTab('browse')">
+        <button class="nav-btn active" onclick="showGameTab('flights')">
+            <span class="nav-icon">&#x2708;</span>
+            Flights
+        </button>
+        <button class="nav-btn" onclick="showGameTab('browse')">
             <span class="nav-icon">&#x1F50D;</span>
             Browse
         </button>
@@ -856,29 +785,6 @@
     <div class="profile-screen-content" id="profile-content"></div>
 </div>
 
-<!-- Flight Selection Modal -->
-<div id="flight-modal" class="modal-overlay">
-    <div class="modal">
-        <h2>Flight to <span id="flight-dest-name"></span></h2>
-        <p id="flight-modal-body"></p>
-        <div id="flight-options"></div>
-        <div class="modal-actions" style="margin-top:16px;">
-            <button class="btn btn-secondary btn-small" onclick="closeModal('flight-modal')">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- New Men Modal -->
-<div id="newmen-modal" class="modal-overlay">
-    <div class="modal">
-        <h2>New Arrivals</h2>
-        <p id="newmen-text"></p>
-        <div class="modal-actions">
-            <button class="btn btn-primary btn-small" onclick="closeModal('newmen-modal')">Cool</button>
-        </div>
-    </div>
-</div>
-
 <!-- Arrival Screen -->
 <div id="arrival-screen" class="screen">
     <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; text-align:center;">
@@ -906,14 +812,14 @@ const PREFERENCES = [
 ];
 
 const ACTIVITIES = [
-    { name: 'drinks', baseDuration: 1 },
-    { name: 'dinner', baseDuration: 2 },
-    { name: 'hiking', baseDuration: 2 },
-    { name: 'movies', baseDuration: 2 },
-    { name: 'dancing', baseDuration: 2 },
-    { name: 'sex', baseDuration: 1, requireMatch: 50 },
-    { name: 'hookup', baseDuration: 1, requireMatch: 40 },
-    { name: 'one night stand', baseDuration: 1, requireMatch: 30 },
+    { name: 'drinks', duration: 45 },
+    { name: 'dinner', duration: 90 },
+    { name: 'hiking', duration: 120 },
+    { name: 'movies', duration: 120 },
+    { name: 'dancing', duration: 90 },
+    { name: 'sex', duration: 30, requireMatch: 50 },
+    { name: 'hookup', duration: 30, requireMatch: 40 },
+    { name: 'one night stand', duration: 45, requireMatch: 30 },
 ];
 
 const AIRPORTS = [
@@ -1000,9 +906,9 @@ const CONNECTIONS = {
     'DCA': ['ATL','JFK','LAX','ORD','BOS','MIA','SFO','CLT','BNA','PHL','RDU','FLL','LGA','IAD'],
 };
 
-const FIRST_NAMES = ['Mike','Jake','Chris','Matt','Ryan','Tyler','Brandon','Kevin','Brian','Jason','David','James','Eric','Adam','Dan','Nick','Alex','Sam','Ben','Luke','Carlos','Luis','Miguel','Diego','Andres','Omar','Hassan','Raj','Wei','Jin','Kai','Leo','Marco','Pierre','Antonio','Sergio','Rafael','Hiroshi','Yuki','Chen','Raj','Arjun','Vikram','Noah','Ethan','Liam','Mason','Logan','Aiden','Lucas','Oliver','Elijah','Caleb','Nathan','Isaiah','Carter','Wyatt','Gabriel','Julian','Sebastian','Adrian'];
+const FIRST_NAMES = ['Mike','Jake','Chris','Matt','Ryan','Tyler','Brandon','Kevin','Brian','Jason','David','James','Eric','Adam','Dan','Nick','Alex','Sam','Ben','Luke','Carlos','Luis','Miguel','Diego','Andres','Omar','Hassan','Raj','Wei','Jin','Kai','Leo','Marco','Pierre','Antonio','Sergio','Rafael','Hiroshi','Yuki','Chen','Arjun','Vikram','Noah','Ethan','Liam','Mason','Logan','Aiden','Lucas','Oliver','Elijah','Caleb','Nathan','Isaiah','Carter','Wyatt','Gabriel','Julian','Sebastian','Adrian'];
 
-const BACKGROUNDS = ['business consultant','software engineer','graphic designer','personal trainer','nurse','teacher','chef','photographer','musician','architect','doctor','lawyer','freelance writer','marketing manager','pilot','flight attendant','real estate agent','yoga instructor','barber','social worker','veterinarian','dentist','pharmacist','therapist','chef','artist','model','entertainer'];
+const BACKGROUNDS = ['business consultant','software engineer','graphic designer','personal trainer','nurse','teacher','chef','photographer','musician','architect','doctor','lawyer','freelance writer','marketing manager','pilot','flight attendant','real estate agent','yoga instructor','barber','social worker','veterinarian','dentist','pharmacist','therapist','artist','model','entertainer'];
 
 function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -1024,7 +930,7 @@ function generateMan(playerPrefs) {
     const avatar = randomFrom(AVATARS.slice(0, 12));
     const name = generateManName();
     const background = randomFrom(BACKGROUNDS);
-    const turnLayover = randomInt(2, 12);
+    const layoverMinutes = randomInt(120, 960); // 2-16 hours
 
     const matchingPrefs = prefs.filter(p => playerPrefs.includes(p));
     const matchPercent = Math.min(99, Math.max(15, 40 + matchingPrefs.length * 15 + randomInt(-10, 10)));
@@ -1035,8 +941,8 @@ function generateMan(playerPrefs) {
         preferences: prefs,
         hiddenPrefs,
         matchPercent,
-        turnsLeft: turnLayover,
-        maxTurns: turnLayover,
+        minutesLeft: layoverMinutes,
+        maxMinutes: layoverMinutes,
         credits: matchPercent > 70 ? 3 : matchPercent > 45 ? 2 : 1,
     };
 }
@@ -1049,7 +955,33 @@ function generateAirportMen(airport, playerPrefs, count) {
     return men;
 }
 
-// ==================== DISTANCE ====================
+// ==================== TIME FORMATTING ====================
+
+const START_HOUR = 6; // Game starts at 6:00 AM
+
+function formatGameTime(totalMinutes) {
+    const day = Math.floor(totalMinutes / 1440) + 1;
+    const minutesInDay = totalMinutes % 1440;
+    let hours = Math.floor(minutesInDay / 60);
+    const mins = minutesInDay % 60;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `Day ${day}, ${displayHour}:${mins.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function formatDuration(minutes) {
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
+}
+
+function formatFlightTime(departureMinutes, arrivalMinutes) {
+    return `${formatGameTime(departureMinutes)} → ${formatGameTime(arrivalMinutes)}`;
+}
+
+// ==================== DISTANCE / FLIGHT TIME ====================
 
 const REGION_DISTANCES = {
     northeast: { northeast: 1, southeast: 2, midwest: 2, south: 3, west: 4, hawaii: 6 },
@@ -1073,9 +1005,72 @@ function getFlightCost(fromAirport, toAirport) {
     return 4;
 }
 
-function getFlightTime(fromAirport, toAirport) {
+function getFlightDurationMinutes(fromAirport, toAirport) {
     const cost = getFlightCost(fromAirport, toAirport);
-    return cost;
+    return cost * 60; // 1 credit = 1 hour of flight
+}
+
+// ==================== FLIGHT SCHEDULES ====================
+
+function generateFlightSchedule(airportId, gameTime) {
+    const flights = [];
+    const destinations = CONNECTIONS[airportId] || [];
+    const flightId = () => 'fl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+    destinations.forEach(dest => {
+        const flightDuration = getFlightDurationMinutes(airportId, dest);
+        const cost = getFlightCost(airportId, dest);
+
+        const numFlights = randomInt(3, 6);
+        for (let i = 0; i < numFlights; i++) {
+            const hourOffset = randomInt(0, 72); // spread across next 36 hours (in 30min slots)
+            const departure = gameTime + (hourOffset * 30);
+            const arrival = departure + flightDuration;
+            const delayed = Math.random() < 0.15;
+            const delayMinutes = delayed ? randomInt(30, 120) : 0;
+
+            flights.push({
+                id: flightId(),
+                from: airportId,
+                to: dest,
+                departure: departure,
+                arrival: arrival + delayMinutes,
+                cost: cost,
+                delayed: delayed,
+                delayMinutes: delayMinutes,
+            });
+        }
+    });
+
+    return flights.sort((a, b) => a.departure - b.departure);
+}
+
+function refreshSchedules(char) {
+    if (!char.world.schedules) char.world.schedules = {};
+    if (!char.world.lastScheduleRefresh) char.world.lastScheduleRefresh = 0;
+
+    if (char.world.gameTime - char.world.lastScheduleRefresh >= 360) {
+        const airportsToRefresh = [char.currentAirport];
+        const conns = CONNECTIONS[char.currentAirport] || [];
+        conns.forEach(c => {
+            if (Math.random() < 0.3) airportsToRefresh.push(c);
+        });
+
+        airportsToRefresh.forEach(aid => {
+            char.world.schedules[aid] = generateFlightSchedule(aid, char.world.gameTime);
+        });
+
+        char.world.lastScheduleRefresh = char.world.gameTime;
+    }
+
+    Object.keys(char.world.schedules).forEach(aid => {
+        char.world.schedules[aid] = char.world.schedules[aid].filter(f => f.departure > char.world.gameTime - 120);
+    });
+}
+
+function getFlightsFrom(airportId, char) {
+    if (!char.world.schedules || !char.world.schedules[airportId]) return [];
+    return char.world.schedules[airportId].filter(f => f.departure >= char.world.gameTime);
 }
 
 // ==================== STATE ====================
@@ -1085,18 +1080,20 @@ let gameState = {
     characters: {},
 };
 
-let currentView = 'browse';
+let currentView = 'flights';
 let currentFilter = 'here';
 let pendingArrivals = [];
 
 function createNewCharacter(name, avatar, prefs) {
     const id = 'char_' + Date.now();
     const startAirport = randomFrom(['JFK','LAX','ORD','ATL','DFW','SFO','MIA','DEN','SEA','BOS']);
+    const startGameTime = START_HOUR * 60; // 6:00 AM in minutes
 
     const world = {
-        turnCounter: 1,
+        gameTime: startGameTime,
         airports: {},
-        delayTurns: 0,
+        schedules: {},
+        lastScheduleRefresh: 0,
     };
 
     AIRPORTS.forEach(a => {
@@ -1107,10 +1104,15 @@ function createNewCharacter(name, avatar, prefs) {
     const startingMen = generateAirportMen(startAirport, prefs, menCount);
     world.airports[startAirport].men = startingMen;
 
+    world.schedules[startAirport] = generateFlightSchedule(startAirport, startGameTime);
+    const conns = CONNECTIONS[startAirport] || [];
+    conns.forEach(c => {
+        world.schedules[c] = generateFlightSchedule(c, startGameTime);
+    });
+    world.lastScheduleRefresh = startGameTime;
+
     gameState.characters[id] = {
-        id,
-        name,
-        avatar,
+        id, name, avatar,
         currentAirport: startAirport,
         credits: 5,
         preferences: prefs,
@@ -1141,92 +1143,53 @@ function loadGame() {
         const raw = localStorage.getItem('layover_save');
         if (raw) {
             gameState = JSON.parse(raw);
+            Object.values(gameState.characters).forEach(c => {
+                if (!c.world.schedules) c.world.schedules = {};
+                if (!c.world.lastScheduleRefresh) c.world.lastScheduleRefresh = 0;
+            });
             return true;
         }
     } catch(e) { console.warn('Load failed', e); }
     return false;
 }
 
-// ==================== MEN MANAGEMENT ====================
+// ==================== TIME ADVANCEMENT ====================
 
-function advanceTurns(char) {
-    char.world.turnCounter++;
+function advanceTime(char, minutes) {
+    char.world.gameTime += minutes;
 
     Object.keys(char.world.airports).forEach(airportId => {
         const port = char.world.airports[airportId];
-        port.men.forEach(m => { m.turnsLeft--; });
-        port.men = port.men.filter(m => m.turnsLeft > 0);
+        port.men.forEach(m => { m.minutesLeft -= minutes; });
+        port.men = port.men.filter(m => m.minutesLeft > 0);
     });
 
-    if (char.world.delayTurns > 0) {
-        char.world.delayTurns--;
-    }
-
-    const playerAirport = char.currentAirport;
-    const currentMen = char.world.airports[playerAirport].men;
-    if (currentMen.length < 3 && Math.random() < 0.4) {
-        const arriving = generateAirportMen(playerAirport, char.preferences, randomInt(1, 3));
-        char.world.airports[playerAirport].men.push(...arriving);
-        pendingArrivals.push(...arriving);
-    }
-
-    Object.keys(char.world.airports).forEach(airportId => {
-        if (airportId === playerAirport) return;
-        const port = char.world.airports[airportId];
-        if (port.men.length < 2 && Math.random() < 0.25) {
-            const arriving = generateAirportMen(airportId, char.preferences, randomInt(1, 2));
-            port.men.push(...arriving);
+    if (char.world.gameTime % 360 < minutes) {
+        const playerAirport = char.currentAirport;
+        const currentMen = char.world.airports[playerAirport].men;
+        if (currentMen.length < 3 && Math.random() < 0.5) {
+            const arriving = generateAirportMen(playerAirport, char.preferences, randomInt(1, 3));
+            char.world.airports[playerAirport].men.push(...arriving);
+            pendingArrivals.push(...arriving);
         }
-    });
 
+        Object.keys(char.world.airports).forEach(airportId => {
+            if (airportId === playerAirport) return;
+            const port = char.world.airports[airportId];
+            if (port.men.length < 2 && Math.random() < 0.25) {
+                const arriving = generateAirportMen(airportId, char.preferences, randomInt(1, 2));
+                port.men.push(...arriving);
+            }
+        });
+    }
+
+    refreshSchedules(char);
     saveGame();
 }
 
-function showArrivalScreen(airportId, delay) {
-    const airport = AIRPORTS.find(a => a.id === airportId);
-    document.getElementById('arrival-icon').textContent = delay > 0 ? '⚠️' : '✈️';
-    document.getElementById('arrival-title').textContent = delay > 0
-        ? `Delayed at ${airport.name}`
-        : `Arrived at ${airport.name}`;
-    document.getElementById('arrival-subtitle').textContent = airportId;
-
-    const delayEl = document.getElementById('arrival-delay');
-    if (delay > 0) {
-        delayEl.style.display = 'flex';
-        delayEl.textContent = `Your flight was delayed ${delay} turn${delay > 1 ? 's' : ''}. Time passed while you waited.`;
-    } else {
-        delayEl.style.display = 'none';
-    }
-
-    const newMenEl = document.getElementById('arrival-newmen');
-    const menListEl = document.getElementById('arrival-men-list');
-    if (pendingArrivals.length > 0) {
-        newMenEl.style.display = '';
-        menListEl.innerHTML = pendingArrivals.map(m => `
-            <div class="profile-card" style="margin-bottom:8px;">
-                <div class="profile-top">
-                    <div class="profile-avatar">${m.avatar}</div>
-                    <div class="profile-main">
-                        <div class="profile-name">${m.name}, ${m.age}</div>
-                        <div class="profile-location">${m.background}</div>
-                    </div>
-                    <div class="match-badge ${m.matchPercent >= 70 ? 'match-high' : m.matchPercent >= 45 ? 'match-mid' : 'match-low'}">${m.matchPercent}%</div>
-                </div>
-                <div class="profile-prefs">
-                    ${m.preferences.slice(0, 3).map(p => `<span class="profile-pref">${p}</span>`).join('')}
-                </div>
-            </div>
-        `).join('');
-        pendingArrivals = [];
-    } else {
-        newMenEl.style.display = 'none';
-    }
-
-    showScreen('arrival-screen');
-}
-
-function endArrival() {
-    showScreen('game-screen');
+function wait() {
+    const char = getActiveChar();
+    advanceTime(char, 30);
     renderGame();
 }
 
@@ -1237,6 +1200,7 @@ function startEncounter(man) {
     const success = man.matchPercent > randomInt(10, 90);
     let creditsEarned = 0;
     const activities = [];
+    let totalTime = 45;
 
     if (success) {
         const possibleActivities = ACTIVITIES.filter(a => !a.requireMatch || man.matchPercent >= a.requireMatch);
@@ -1247,6 +1211,7 @@ function startEncounter(man) {
             const actSuccess = Math.random() < (man.matchPercent / 100);
             activities.push({ name: act.name, success: actSuccess });
             if (actSuccess) creditsEarned += 1;
+            totalTime += act.duration;
         });
 
         creditsEarned += man.credits;
@@ -1267,14 +1232,15 @@ function startEncounter(man) {
         success,
         creditsEarned,
         activities: activities.map(a => a.name),
+        gameTime: char.world.gameTime,
         timestamp: Date.now(),
     });
 
-    advanceTurns(char);
+    advanceTime(char, totalTime);
 
     document.getElementById('encounter-avatar').textContent = man.avatar;
     document.getElementById('encounter-name').textContent = `${man.name}, ${man.age}`;
-    document.getElementById('encounter-airport').textContent = `${AIRPORTS.find(a => a.id === char.currentAirport).name} Airport`;
+    document.getElementById('encounter-airport').textContent = `${AIRPORTS.find(a => a.id === char.currentAirport).name} Airport · ${formatDuration(totalTime)} spent`;
 
     const matchEl = document.getElementById('encounter-match');
     matchEl.textContent = man.matchPercent + '%';
@@ -1310,112 +1276,79 @@ function endEncounter() {
 
 // ==================== FLIGHTS ====================
 
-function openFlightModal(man) {
+function bookFlight(flight) {
     const char = getActiveChar();
-    const destAirport = man.airport || char.currentAirport;
+    if (char.credits < flight.cost) return;
 
-    const allMen = [];
-    Object.keys(char.world.airports).forEach(aid => {
-        char.world.airports[aid].men.forEach(m => {
-            allMen.push({ ...m, airport: aid });
-        });
-    });
-
-    const targetMen = allMen.filter(m => m.id !== man.id);
-    if (targetMen.length === 0 && !man) {
-        return;
-    }
-
-    const flights = [];
-    const seen = new Set();
-
-    targetMen.forEach(m => {
-        if (seen.has(m.airport)) return;
-        seen.add(m.airport);
-        const cost = getFlightCost(char.currentAirport, m.airport);
-        const time = getFlightTime(char.currentAirport, m.airport);
-        const delay = Math.random() < 0.2 ? randomInt(1, 3) : 0;
-        flights.push({
-            airport: m.airport,
-            airportName: AIRPORTS.find(a => a.id === m.airport).name,
-            cost,
-            time,
-            delay,
-            men: targetMen.filter(mm => mm.airport === m.airport),
-        });
-    });
-
-    flights.sort((a, b) => a.cost - b.cost);
-
-    const dest = AIRPORTS.find(a => a.id === man.airport);
-    document.getElementById('flight-dest-name').textContent = dest ? dest.name : 'Unknown';
-
-    const modalBody = document.getElementById('flight-modal-body');
-    const optionsDiv = document.getElementById('flight-options');
-
-    optionsDiv.innerHTML = '';
-
-    flights.forEach(f => {
-        const canAfford = char.credits >= f.cost;
-        const opt = document.createElement('div');
-        opt.className = 'flight-option';
-        opt.style.marginBottom = '8px';
-        opt.innerHTML = `
-            <div class="flight-route">
-                <span style="font-weight:600;">${f.airport}</span>
-                <span class="flight-arrow">→</span>
-                <span style="color:#888; font-size:13px;">${f.airportName}</span>
-            </div>
-            <div class="flight-details">
-                <div class="flight-cost">${f.cost} credits</div>
-                <div class="flight-time">${f.time} turns${f.delay ? ` (delayed ${f.delay} turns)` : ''}</div>
-                <div style="font-size:12px; color:#888;">${f.men.length} men</div>
-            </div>
-        `;
-        if (canAfford) {
-            opt.onclick = () => takeFlight(f);
-        } else {
-            opt.style.opacity = '0.4';
-        }
-        optionsDiv.appendChild(opt);
-    });
-
-    if (flights.length === 0) {
-        modalBody.textContent = 'No flights available right now.';
-    } else {
-        modalBody.textContent = `You have ${char.credits} credits. Choose a flight:`;
-    }
-
-    openModal('flight-modal');
-}
-
-function takeFlight(flight) {
-    const char = getActiveChar();
     char.credits -= flight.cost;
+    const waitTime = Math.max(0, flight.departure - char.world.gameTime);
+    const flightDuration = flight.arrival - flight.departure;
 
-    const fromAirport = char.history.flights.length > 0 ? char.history.flights[char.history.flights.length - 1].to : 'START';
+    advanceTime(char, waitTime + flightDuration);
 
-    if (flight.delay > 0) {
-        char.world.delayTurns = flight.delay;
-        for (let i = 0; i < flight.delay; i++) advanceTurns(char);
-    }
-
-    char.currentAirport = flight.airport;
+    const fromAirport = char.currentAirport;
+    char.currentAirport = flight.to;
 
     char.history.flights.push({
         from: fromAirport,
-        to: flight.airport,
+        to: flight.to,
         cost: flight.cost,
-        delayed: flight.delay > 0,
-        delayTurns: flight.delay,
+        delayed: flight.delayed,
+        delayMinutes: flight.delayMinutes,
+        gameTime: char.world.gameTime,
         timestamp: Date.now(),
     });
 
-    advanceTurns(char);
-    closeModal('flight-modal');
     saveGame();
+    showArrivalScreen(flight.to, flight.delayed ? flight.delayMinutes : 0);
+}
 
-    showArrivalScreen(flight.airport, flight.delay);
+function showArrivalScreen(airportId, delayMinutes) {
+    const airport = AIRPORTS.find(a => a.id === airportId);
+    document.getElementById('arrival-icon').textContent = delayMinutes > 0 ? '⚠️' : '✈️';
+    document.getElementById('arrival-title').textContent = delayMinutes > 0
+        ? `Delayed at ${airport.name}`
+        : `Arrived at ${airport.name}`;
+    document.getElementById('arrival-subtitle').textContent = `${airportId} · ${formatGameTime(getActiveChar().world.gameTime)}`;
+
+    const delayEl = document.getElementById('arrival-delay');
+    if (delayMinutes > 0) {
+        delayEl.style.display = 'flex';
+        delayEl.textContent = `Your flight was delayed by ${formatDuration(delayMinutes)}. Time passed while you waited.`;
+    } else {
+        delayEl.style.display = 'none';
+    }
+
+    const newMenEl = document.getElementById('arrival-newmen');
+    const menListEl = document.getElementById('arrival-men-list');
+    if (pendingArrivals.length > 0) {
+        newMenEl.style.display = '';
+        menListEl.innerHTML = pendingArrivals.map(m => `
+            <div class="profile-card" style="margin-bottom:8px;">
+                <div class="profile-top">
+                    <div class="profile-avatar">${m.avatar}</div>
+                    <div class="profile-main">
+                        <div class="profile-name">${m.name}, ${m.age}</div>
+                        <div class="profile-location">${m.background} · ${formatDuration(m.minutesLeft)} layover</div>
+                    </div>
+                    <div class="match-badge ${m.matchPercent >= 70 ? 'match-high' : m.matchPercent >= 45 ? 'match-mid' : 'match-low'}">${m.matchPercent}%</div>
+                </div>
+                <div class="profile-prefs">
+                    ${m.preferences.slice(0, 3).map(p => `<span class="profile-pref">${p}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+        pendingArrivals = [];
+    } else {
+        newMenEl.style.display = 'none';
+    }
+
+    showScreen('arrival-screen');
+}
+
+function endArrival() {
+    showScreen('game-screen');
+    renderGame();
 }
 
 // ==================== UI ====================
@@ -1423,14 +1356,6 @@ function takeFlight(flight) {
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-}
-
-function openModal(id) {
-    document.getElementById(id).classList.add('open');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.remove('open');
 }
 
 function toggleCharDropdown() {
@@ -1539,17 +1464,55 @@ function renderGame() {
 
     const airport = AIRPORTS.find(a => a.id === char.currentAirport);
     document.getElementById('current-airport-code').textContent = airport ? `${airport.id} — ${airport.name}` : char.currentAirport;
-    document.getElementById('turn-counter').textContent = char.world.turnCounter;
+    document.getElementById('game-time-display').textContent = formatGameTime(char.world.gameTime);
 
-    const delayBanner = document.getElementById('delay-banner');
-    if (char.world.delayTurns > 0) {
-        delayBanner.style.display = 'flex';
-        delayBanner.textContent = `⚠️ Flight delayed! ${char.world.delayTurns} turn${char.world.delayTurns > 1 ? 's' : ''} remaining.`;
-    } else {
-        delayBanner.style.display = 'none';
+    if (currentView === 'flights') renderFlightSchedule();
+    else if (currentView === 'browse') renderProfileList();
+}
+
+function renderFlightSchedule() {
+    const char = getActiveChar();
+    const container = document.getElementById('flight-schedule');
+    container.innerHTML = '';
+
+    refreshSchedules(char);
+    const flights = getFlightsFrom(char.currentAirport, char);
+
+    if (flights.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">🛫</div><p>No flights available. Wait for the next departure.</p></div>';
+        return;
     }
 
-    renderProfileList();
+    flights.slice(0, 15).forEach(f => {
+        const canAfford = char.credits >= f.cost;
+        const destAirport = AIRPORTS.find(a => a.id === f.to);
+        const waitTime = Math.max(0, f.departure - char.world.gameTime);
+        const flightDuration = f.arrival - f.departure;
+        const isPast = f.departure < char.world.gameTime;
+
+        const row = document.createElement('div');
+        row.className = 'flight-row' + (f.delayed ? ' flight-delayed' : '');
+
+        row.innerHTML = `
+            <div class="flight-row-info">
+                <div class="flight-dest">${f.to}</div>
+                <div class="flight-dest-name">${destAirport ? destAirport.name : f.to}</div>
+                <div class="flight-times">
+                    Departs <span>${formatGameTime(f.departure)}</span> ·
+                    ${formatDuration(flightDuration)} flight ·
+                    ${waitTime > 0 ? `Wait ${formatDuration(waitTime)}` : 'Ready now'}
+                </div>
+                ${f.delayed ? `<div class="flight-delay-tag">⚠ Delayed ${formatDuration(f.delayMinutes)}</div>` : ''}
+            </div>
+            <div class="flight-row-actions">
+                <div class="flight-cost-badge">${f.cost}💳</div>
+                <button class="flight-book-btn" ${canAfford && !isPast ? '' : 'disabled'} onclick="bookFlight(${JSON.stringify(f).replace(/"/g, '&quot;')})">
+                    Book
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
 }
 
 function renderProfileList() {
@@ -1591,9 +1554,7 @@ function renderProfileList() {
         card.className = 'profile-card';
 
         const matchClass = m.matchPercent >= 70 ? 'match-high' : m.matchPercent >= 45 ? 'match-mid' : 'match-low';
-        const timerClass = m.turnsLeft <= 2 ? 'urgent' : '';
-        const cost = getFlightCost(char.currentAirport, m.airport);
-        const canAfford = char.credits >= cost;
+        const timerClass = m.minutesLeft <= 60 ? 'urgent' : '';
         const isCurrentAirport = m.airport === char.currentAirport;
 
         const airportName = AIRPORTS.find(a => a.id === m.airport)?.name || m.airport;
@@ -1606,7 +1567,7 @@ function renderProfileList() {
                 <div class="profile-avatar">${m.avatar}</div>
                 <div class="profile-main">
                     <div class="profile-name">${m.name}, ${m.age}</div>
-                    <div class="profile-location">${airportName}${!isCurrentAirport ? ` · ${cost}💳 to fly` : ''}</div>
+                    <div class="profile-location">${airportName}${!isCurrentAirport ? ` · ${formatDuration(m.minutesLeft)} layover` : ''}</div>
                 </div>
                 <div class="match-badge ${matchClass}">${m.matchPercent}%</div>
             </div>
@@ -1615,10 +1576,10 @@ function renderProfileList() {
                 ${hiddenCount > 0 ? `<span class="profile-pref hidden-pref">+${hiddenCount} hidden</span>` : ''}
             </div>
             <div class="profile-bottom">
-                <span class="timer-badge ${timerClass}">⏱ ${m.turnsLeft} turn${m.turnsLeft > 1 ? 's' : ''} left</span>
+                <span class="timer-badge ${timerClass}">⏱ ${formatDuration(m.minutesLeft)} left</span>
                 ${isCurrentAirport
                     ? `<button class="fly-btn" onclick="meetManById('${m.id}')">Meet ${m.name}</button>`
-                    : `<button class="fly-btn" ${canAfford ? '' : 'disabled'} onclick="flyToAirport('${m.airport}')">Fly to ${m.airport}</button>`
+                    : `<button class="fly-btn" onclick="showGameTab('flights')">View Flights</button>`
                 }
             </div>
         `;
@@ -1639,62 +1600,30 @@ function meetManById(manId) {
     }
 
     if (foundMan) {
-        advanceTurns(char);
         saveGame();
         startEncounter(foundMan);
     }
 }
 
-function flyToAirport(airportId) {
-    const char = getActiveChar();
-    const cost = getFlightCost(char.currentAirport, airportId);
-    if (char.credits < cost) return;
-
-    char.credits -= cost;
-    const delay = Math.random() < 0.2 ? randomInt(1, 3) : 0;
-
-    const fromAirport = char.currentAirport;
-
-    if (delay > 0) {
-        char.world.delayTurns = delay;
-        for (let i = 0; i < delay; i++) advanceTurns(char);
-    }
-
-    char.currentAirport = airportId;
-
-    char.history.flights.push({
-        from: fromAirport,
-        to: airportId,
-        cost,
-        delayed: delay > 0,
-        delayTurns: delay,
-        timestamp: Date.now(),
-    });
-
-    advanceTurns(char);
-    saveGame();
-
-    showArrivalScreen(airportId, delay);
-}
-
 function showGameTab(tab) {
     currentView = tab;
+
+    document.getElementById('flights-tab').style.display = tab === 'flights' ? '' : 'none';
+    document.getElementById('browse-tab').style.display = tab === 'browse' ? '' : 'none';
+    document.getElementById('profile-view').style.display = tab === 'profile' ? '' : 'none';
+
     document.querySelectorAll('.bottom-nav .nav-btn').forEach(b => b.classList.remove('active'));
 
-    if (tab === 'browse') {
-        document.getElementById('profile-list').style.display = '';
-        document.getElementById('section-title').style.display = '';
-        document.getElementById('filter-bar').style.display = '';
-        document.getElementById('profile-view').style.display = 'none';
+    if (tab === 'flights') {
         document.querySelectorAll('.bottom-nav .nav-btn')[0].classList.add('active');
-    } else if (tab === 'profile') {
-        document.getElementById('profile-list').style.display = 'none';
-        document.getElementById('section-title').style.display = 'none';
-        document.getElementById('filter-bar').style.display = 'none';
-        document.getElementById('profile-view').style.display = '';
+    } else if (tab === 'browse') {
         document.querySelectorAll('.bottom-nav .nav-btn')[1].classList.add('active');
+    } else if (tab === 'profile') {
+        document.querySelectorAll('.bottom-nav .nav-btn')[2].classList.add('active');
         renderProfileView();
     }
+
+    renderGame();
 }
 
 function setFilter(filter) {
@@ -1716,8 +1645,8 @@ function renderProfileView() {
         return `
             <div class="history-item flight">
                 <div class="history-title">${fromName || 'Start'} → ${toName}</div>
-                <div class="history-detail">${f.cost} credits${f.delayed ? ` · Delayed ${f.delayTurns} turns` : ' · On time'}</div>
-                <div class="history-time">${new Date(f.timestamp).toLocaleString()}</div>
+                <div class="history-detail">${f.cost} credits${f.delayed ? ` · Delayed ${formatDuration(f.delayMinutes)}` : ' · On time'}</div>
+                <div class="history-time">${formatGameTime(f.gameTime)}</div>
             </div>
         `;
     }).join('');
@@ -1732,7 +1661,7 @@ function renderProfileView() {
                     ${e.creditsEarned > 0 ? ` · +${e.creditsEarned} credits` : ''}
                 </div>
                 ${e.activities.length > 0 ? `<div class="history-detail">Activities: ${e.activities.join(', ')}</div>` : ''}
-                <div class="history-time">${new Date(e.timestamp).toLocaleString()}</div>
+                <div class="history-time">${formatGameTime(e.gameTime)}</div>
             </div>
         `;
     }).join('');
