@@ -265,6 +265,112 @@
         #install-button:hover {
             background-color: #3a7bc8;
         }
+
+        .history-btn {
+            background-color: #9b59b6;
+        }
+
+        .history-btn:hover {
+            background-color: #8e44ad;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 420px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 22px;
+            color: #333;
+        }
+
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: #999;
+            padding: 20px 0;
+        }
+
+        .history-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-entry:last-child {
+            border-bottom: none;
+        }
+
+        .history-entry-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .history-difficulty {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 3px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .history-difficulty.easy { background-color: #e8f5e9; color: #2e7d32; }
+        .history-difficulty.medium { background-color: #fff3e0; color: #e65100; }
+        .history-difficulty.hard { background-color: #fce4ec; color: #c62828; }
+        .history-difficulty.expert { background-color: #f3e5f5; color: #6a1b9a; }
+
+        .history-date {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .history-result {
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -292,11 +398,20 @@
             <button id="clear-btn" class="clear-btn">Clear</button>
             <button id="solve-btn" class="solve-btn">Solve</button>
             <button id="check-btn" class="check-btn">Check</button>
+            <button id="history-btn" class="history-btn">History</button>
         </div>
 
         <div id="status-message" class="status-message" style="display: none;"></div>
 
         <button id="install-button">Install App</button>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal">
+            <button id="modal-close-btn" class="modal-close">&times;</button>
+            <h2>Game History</h2>
+            <div id="history-list"></div>
+        </div>
     </div>
 
     <script>
@@ -319,6 +434,82 @@
             const checkBtn = document.getElementById('check-btn');
             const statusMessage = document.getElementById('status-message');
             const installButton = document.getElementById('install-button');
+            const historyBtn = document.getElementById('history-btn');
+            const historyModal = document.getElementById('history-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const historyList = document.getElementById('history-list');
+
+            // localStorage helpers
+            function saveCurrentGame() {
+                try {
+                    localStorage.setItem('sudoku_current_game', JSON.stringify({
+                        board,
+                        userBoard,
+                        difficulty: difficultySelect.value,
+                        isComplete,
+                        isCorrect,
+                        isSolved
+                    }));
+                } catch (e) { /* ignore quota errors */ }
+            }
+
+            function loadCurrentGame() {
+                try {
+                    const data = JSON.parse(localStorage.getItem('sudoku_current_game'));
+                    if (!data || !data.board || !data.userBoard) return null;
+                    return data;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function saveToHistory(difficulty, correct) {
+                try {
+                    const history = JSON.parse(localStorage.getItem('sudoku_game_history') || '[]');
+                    history.unshift({
+                        difficulty,
+                        date: new Date().toISOString(),
+                        isCorrect: correct
+                    });
+                    if (history.length > 50) history.length = 50;
+                    localStorage.setItem('sudoku_game_history', JSON.stringify(history));
+                } catch (e) { /* ignore */ }
+            }
+
+            function renderHistory() {
+                const history = JSON.parse(localStorage.getItem('sudoku_game_history') || '[]');
+                if (history.length === 0) {
+                    historyList.innerHTML = '<div class="history-empty">No games played yet.</div>';
+                    return;
+                }
+                historyList.innerHTML = history.map(entry => {
+                    const date = new Date(entry.date);
+                    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                    const resultIcon = entry.isCorrect ? '✅' : '❌';
+                    return `<div class="history-entry">
+                        <div class="history-entry-info">
+                            <span class="history-difficulty ${entry.difficulty}">${entry.difficulty}</span>
+                            <span class="history-date">${dateStr}</span>
+                        </div>
+                        <span class="history-result">${resultIcon}</span>
+                    </div>`;
+                }).join('');
+            }
+
+            function showHistory() {
+                renderHistory();
+                historyModal.classList.add('active');
+            }
+
+            function hideHistory() {
+                historyModal.classList.remove('active');
+            }
+
+            historyBtn.addEventListener('click', showHistory);
+            modalCloseBtn.addEventListener('click', hideHistory);
+            historyModal.addEventListener('click', (e) => {
+                if (e.target === historyModal) hideHistory();
+            });
 
             // Initialize the game
             initializeGame();
@@ -340,8 +531,18 @@
             }
 
             function initializeGame() {
-                renderBoard();
-                generateNewBoard();
+                const saved = loadCurrentGame();
+                if (saved) {
+                    board = saved.board;
+                    userBoard = saved.userBoard;
+                    difficultySelect.value = saved.difficulty;
+                    isComplete = saved.isComplete;
+                    isCorrect = saved.isCorrect;
+                    isSolved = saved.isSolved || false;
+                    renderBoard();
+                } else {
+                    generateNewBoard();
+                }
             }
 
             function renderBoard() {
@@ -391,6 +592,7 @@
                 selectedCell = null;
 
                 renderBoard();
+                saveCurrentGame();
             }
 
             function generateSolution() {
@@ -541,6 +743,7 @@
                     const [row, col] = selectedCell;
                     userBoard[row][col] = num;
                     renderBoard();
+                    saveCurrentGame();
 
                     // Check if the board is complete
                     const complete = !userBoard.flat().includes(0);
@@ -556,6 +759,8 @@
                         } else {
                             setStatusMessage("Your solution has errors. Please check again.", "error");
                         }
+                        saveCurrentGame();
+                        saveToHistory(difficultySelect.value, correct);
                     }
                 }
             }
@@ -565,6 +770,7 @@
                     const [row, col] = selectedCell;
                     userBoard[row][col] = 0;
                     renderBoard();
+                    saveCurrentGame();
                     isComplete = false;
 
                     // Clear completion messages if they exist
@@ -635,6 +841,7 @@
                     isSolved = true;
                     renderBoard();
                     setStatusMessage("Puzzle solved automatically!", "success");
+                    saveCurrentGame();
                 }
             }
 
