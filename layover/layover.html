@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layover</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .screen { display: none; min-height: 100vh; padding: 16px; }
+        .screen.active { display: flex; flex-direction: column; }
+
+        /* Title Screen */
+        #title-screen {
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        .game-logo {
+            font-size: 48px;
+            font-weight: 800;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px rgba(233,69,96,0.5);
+        }
+
+        .game-logo .sub {
+            display: block;
+            font-size: 14px;
+            letter-spacing: 4px;
+            color: #888;
+            font-weight: 400;
+            margin-top: 8px;
+        }
+
+        .char-list {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 50vh;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .char-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .char-card:hover {
+            background: rgba(233,69,96,0.1);
+            border-color: #e94560;
+            transform: translateY(-2px);
+        }
+
+        .char-avatar { font-size: 36px; }
+
+        .char-info { flex: 1; }
+        .char-name { font-size: 18px; font-weight: 600; }
+        .char-stats { font-size: 13px; color: #888; margin-top: 4px; }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+        .btn-primary:hover { background: #d63851; }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Character Creation */
+        #create-screen {
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .avatar-picker {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .avatar-option {
+            width: 56px;
+            height: 56px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .avatar-option:hover { border-color: #888; }
+        .avatar-option.selected { border-color: #e94560; background: rgba(233,69,96,0.15); }
+
+        .name-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            outline: none;
+        }
+
+        .name-input:focus { border-color: #e94560; }
+
+        .pref-section {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .pref-section h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .pref-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .pref-chip {
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pref-chip:hover { border-color: #888; }
+        .pref-chip.selected { background: #e94560; border-color: #e94560; color: white; }
+
+        /* Main Game Screen */
+        #game-screen {
+            padding: 0;
+            background: #0f0f23;
+        }
+
+        .game-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #1a1a2e;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .char-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .char-switcher:hover { background: rgba(255,255,255,0.1); }
+
+        .char-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            min-width: 200px;
+            z-index: 200;
+            overflow: hidden;
+        }
+
+        .char-dropdown.open { display: block; }
+
+        .char-dropdown-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .char-dropdown-item:hover { background: rgba(255,255,255,0.05); }
+        .char-dropdown-item.active { background: rgba(233,69,96,0.15); }
+
+        .credits-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(233,69,96,0.15);
+            border-radius: 20px;
+            font-weight: 600;
+            color: #e94560;
+        }
+
+        .game-body {
+            flex: 1;
+            padding: 16px;
+            padding-bottom: 80px;
+            overflow-y: auto;
+        }
+
+        .location-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .location-name {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .location-code {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .turn-counter {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .section-title {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+
+        /* Profile Cards */
+        .profile-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .profile-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .profile-card:hover {
+            border-color: rgba(233,69,96,0.3);
+        }
+
+        .profile-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .profile-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .profile-main { flex: 1; }
+        .profile-name { font-size: 17px; font-weight: 600; }
+        .profile-location { font-size: 13px; color: #888; }
+
+        .match-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .match-high { background: rgba(46,204,113,0.2); color: #2ecc71; }
+        .match-mid { background: rgba(241,196,15,0.2); color: #f1c40f; }
+        .match-low { background: rgba(231,76,60,0.2); color: #e74c3c; }
+
+        .profile-prefs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .profile-pref {
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 12px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .profile-pref.hidden-pref {
+            background: rgba(255,255,255,0.03);
+            color: #555;
+            font-style: italic;
+        }
+
+        .profile-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .timer-badge {
+            font-size: 13px;
+            color: #f39c12;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .timer-badge.urgent { color: #e74c3c; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .fly-btn {
+            padding: 8px 18px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .fly-btn:hover { background: #d63851; }
+        .fly-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 10px;
+            cursor: pointer;
+            padding: 4px 12px;
+            transition: color 0.2s;
+        }
+
+        .nav-btn.active { color: #e94560; }
+        .nav-btn .nav-icon { font-size: 22px; }
+
+        /* Flight Screen */
+        .flight-option {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .flight-option:hover {
+            border-color: rgba(233,69,96,0.3);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .flight-route {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .flight-arrow {
+            color: #e94560;
+            font-size: 18px;
+        }
+
+        .flight-details {
+            text-align: right;
+        }
+
+        .flight-cost {
+            font-weight: 600;
+            color: #e94560;
+        }
+
+        .flight-time {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Encounter Screen */
+        #encounter-screen {
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f23 100%);
+        }
+
+        .encounter-avatar {
+            font-size: 80px;
+            margin-bottom: 8px;
+        }
+
+        .encounter-name {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .encounter-reveal {
+            max-width: 360px;
+            padding: 20px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .reveal-match {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 12px 0;
+        }
+
+        .reveal-label {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .encounter-activities {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .activity-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+        }
+
+        .activity-name { font-size: 14px; }
+
+        .activity-result {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .activity-result.success { color: #2ecc71; }
+        .activity-result.fail { color: #e74c3c; }
+
+        .encounter-reward {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(46,204,113,0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(46,204,113,0.2);
+        }
+
+        .reward-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2ecc71;
+        }
+
+        /* Profile Screen */
+        .profile-screen-content {
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .profile-header {
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        .profile-header .char-avatar { font-size: 64px; margin-bottom: 12px; }
+        .profile-header .char-name { font-size: 24px; font-weight: 700; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .history-section {
+            margin-top: 24px;
+        }
+
+        .history-item {
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .history-item.flight { border-left-color: #3498db; }
+        .history-item.encounter { border-left-color: #e94560; }
+
+        .history-title { font-weight: 600; font-size: 15px; }
+        .history-detail { font-size: 13px; color: #888; margin-top: 4px; }
+        .history-time { font-size: 11px; color: #555; margin-top: 4px; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .modal p {
+            color: #888;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Delay overlay */
+        .delay-banner {
+            background: rgba(241,196,15,0.1);
+            border: 1px solid rgba(241,196,15,0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #f1c40f;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+        }
+
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #888;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .filter-btn.active {
+            background: rgba(233,69,96,0.15);
+            border-color: #e94560;
+            color: #e94560;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .game-logo { font-size: 36px; letter-spacing: 4px; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Title Screen -->
+<div id="title-screen" class="screen active">
+    <div class="game-logo">
+        Layover
+        <span class="sub">Find your connection</span>
+    </div>
+    <div id="char-list" class="char-list"></div>
+    <button class="btn btn-primary" onclick="showScreen('create-screen')">New Character</button>
+</div>
+
+<!-- Character Creation Screen -->
+<div id="create-screen" class="screen">
+    <h2>Create Character</h2>
+    <input type="text" id="char-name-input" class="name-input" placeholder="Enter name..." maxlength="20">
+    <div>
+        <p style="color:#888; font-size:13px; margin-bottom:8px;">Choose avatar</p>
+        <div id="avatar-picker" class="avatar-picker"></div>
+    </div>
+    <div class="pref-section">
+        <h3>Your Preferences</h3>
+        <div id="pref-picker" class="pref-grid"></div>
+    </div>
+    <div style="display:flex; gap:12px; margin-top:12px;">
+        <button class="btn btn-secondary" onclick="showScreen('title-screen')">Back</button>
+        <button class="btn btn-primary" onclick="createCharacter()">Start</button>
+    </div>
+</div>
+
+<!-- Main Game Screen -->
+<div id="game-screen" class="screen">
+    <div class="game-header">
+        <div class="header-left">
+            <div class="char-switcher" onclick="toggleCharDropdown()">
+                <span id="header-avatar"></span>
+                <span id="header-name"></span>
+                <span style="font-size:10px;">&#9660;</span>
+                <div id="char-dropdown" class="char-dropdown"></div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="credits-badge">
+                <span>&#x1F4B3;</span>
+                <span id="header-credits"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-body">
+        <div id="delay-banner" class="delay-banner" style="display:none;"></div>
+
+        <div class="location-bar">
+            <div>
+                <div class="location-name">You are at</div>
+                <div class="location-code" id="current-airport-code"></div>
+            </div>
+            <div class="turn-counter">
+                Turn <span id="turn-counter">1</span>
+            </div>
+        </div>
+
+        <div class="filter-bar" id="filter-bar">
+            <button class="filter-btn active" data-filter="here" onclick="setFilter('here')">At This Airport</button>
+            <button class="filter-btn" data-filter="all" onclick="setFilter('all')">All Airports</button>
+        </div>
+        <div class="section-title" id="section-title">Men at this airport</div>
+        <div id="profile-list" class="profile-list"></div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn active" onclick="showGameTab('browse')">
+            <span class="nav-icon">&#x1F50D;</span>
+            Browse
+        </button>
+        <button class="nav-btn" onclick="showGameTab('profile')">
+            <span class="nav-icon">&#x1F464;</span>
+            Profile
+        </button>
+    </div>
+</div>
+
+<!-- Encounter Screen -->
+<div id="encounter-screen" class="screen">
+    <div class="encounter-avatar" id="encounter-avatar"></div>
+    <div class="encounter-name" id="encounter-name"></div>
+    <div style="color:#888;" id="encounter-airport"></div>
+
+    <div class="encounter-reveal">
+        <div class="reveal-label">Compatibility</div>
+        <div class="reveal-match" id="encounter-match"></div>
+        <div class="reveal-label">full match revealed</div>
+    </div>
+
+    <div class="encounter-activities" id="encounter-activities"></div>
+
+    <div class="encounter-reward" id="encounter-reward" style="display:none;">
+        <div class="reward-text" id="reward-text"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="endEncounter()">Continue</button>
+</div>
+
+<!-- Profile/History Screen (rendered inside game-screen body) -->
+<div id="profile-view" style="display:none;">
+    <div class="profile-screen-content" id="profile-content"></div>
+</div>
+
+<!-- Flight Selection Modal -->
+<div id="flight-modal" class="modal-overlay">
+    <div class="modal">
+        <h2>Flight to <span id="flight-dest-name"></span></h2>
+        <p id="flight-modal-body"></p>
+        <div id="flight-options"></div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn btn-secondary btn-small" onclick="closeModal('flight-modal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- New Men Modal -->
+<div id="newmen-modal" class="modal-overlay">
+    <div class="modal">
+        <h2>New Arrivals</h2>
+        <p id="newmen-text"></p>
+        <div class="modal-actions">
+            <button class="btn btn-primary btn-small" onclick="closeModal('newmen-modal')">Cool</button>
+        </div>
+    </div>
+</div>
+
+<!-- Arrival Screen -->
+<div id="arrival-screen" class="screen">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; text-align:center;">
+        <div id="arrival-icon" style="font-size:64px;">✈️</div>
+        <div id="arrival-title" style="font-size:24px; font-weight:700;"></div>
+        <div id="arrival-subtitle" style="color:#888;"></div>
+        <div id="arrival-delay" class="delay-banner" style="display:none;"></div>
+        <div id="arrival-newmen" style="display:none; max-width:360px; width:100%;">
+            <div class="section-title" style="text-align:left;">New men at this airport:</div>
+            <div id="arrival-men-list"></div>
+        </div>
+        <button class="btn btn-primary" onclick="endArrival()" style="margin-top:16px;">Start Browsing</button>
+    </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+
+const AVATARS = ['🧑','👨','🧔','👱','👨‍🦰','👨‍🦱','🧑‍🦲','👴','👲','🧔‍♂️','👨‍🦳','🦃','🦅','🐺','🦊','🐻','🐼','🐨','🦁','🐯'];
+
+const PREFERENCES = [
+    'hiking','dinner','movies','dancing','wine','coffee','gym','yoga',
+    'beach','museum','cooking','karaoke','brunch','board games','reading',
+    'concerts','travel','photography','cycling','running'
+];
+
+const ACTIVITIES = [
+    { name: 'drinks', baseDuration: 1 },
+    { name: 'dinner', baseDuration: 2 },
+    { name: 'hiking', baseDuration: 2 },
+    { name: 'movies', baseDuration: 2 },
+    { name: 'dancing', baseDuration: 2 },
+    { name: 'sex', baseDuration: 1, requireMatch: 50 },
+    { name: 'hookup', baseDuration: 1, requireMatch: 40 },
+    { name: 'one night stand', baseDuration: 1, requireMatch: 30 },
+];
+
+const AIRPORTS = [
+    { id: 'ATL', name: 'Atlanta', region: 'southeast', isHub: true, capacity: 10 },
+    { id: 'BOS', name: 'Boston', region: 'northeast', isHub: true, capacity: 8 },
+    { id: 'CLT', name: 'Charlotte', region: 'southeast', isHub: false, capacity: 5 },
+    { id: 'ORD', name: 'Chicago', region: 'midwest', isHub: true, capacity: 10 },
+    { id: 'CVG', name: 'Cincinnati', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'CLE', name: 'Cleveland', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'CMH', name: 'Columbus', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'DAL', name: 'Dallas', region: 'south', isHub: true, capacity: 8 },
+    { id: 'DFW', name: 'Dallas-Fort Worth', region: 'south', isHub: true, capacity: 10 },
+    { id: 'DEN', name: 'Denver', region: 'west', isHub: true, capacity: 8 },
+    { id: 'DTW', name: 'Detroit', region: 'midwest', isHub: false, capacity: 5 },
+    { id: 'FLL', name: 'Fort Lauderdale', region: 'southeast', isHub: false, capacity: 5 },
+    { id: 'HNL', name: 'Honolulu', region: 'hawaii', isHub: true, capacity: 6 },
+    { id: 'IAH', name: 'Houston', region: 'south', isHub: true, capacity: 8 },
+    { id: 'HOU', name: 'Houston Hobby', region: 'south', isHub: false, capacity: 4 },
+    { id: 'IND', name: 'Indianapolis', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'JFK', name: 'New York JFK', region: 'northeast', isHub: true, capacity: 10 },
+    { id: 'LGA', name: 'New York LaGuardia', region: 'northeast', isHub: false, capacity: 6 },
+    { id: 'EWR', name: 'Newark', region: 'northeast', isHub: false, capacity: 6 },
+    { id: 'LAX', name: 'Los Angeles', region: 'west', isHub: true, capacity: 10 },
+    { id: 'LAS', name: 'Las Vegas', region: 'west', isHub: true, capacity: 8 },
+    { id: 'MCI', name: 'Kansas City', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'MIA', name: 'Miami', region: 'southeast', isHub: true, capacity: 8 },
+    { id: 'MSP', name: 'Minneapolis', region: 'midwest', isHub: true, capacity: 6 },
+    { id: 'BNA', name: 'Nashville', region: 'southeast', isHub: false, capacity: 5 },
+    { id: 'MSY', name: 'New Orleans', region: 'south', isHub: false, capacity: 5 },
+    { id: 'OAK', name: 'Oakland', region: 'west', isHub: false, capacity: 4 },
+    { id: 'PDX', name: 'Portland', region: 'west', isHub: false, capacity: 5 },
+    { id: 'PHL', name: 'Philadelphia', region: 'northeast', isHub: false, capacity: 6 },
+    { id: 'PHX', name: 'Phoenix', region: 'west', isHub: true, capacity: 6 },
+    { id: 'PIT', name: 'Pittsburgh', region: 'northeast', isHub: false, capacity: 4 },
+    { id: 'RDU', name: 'Raleigh-Durham', region: 'southeast', isHub: false, capacity: 4 },
+    { id: 'SAN', name: 'San Diego', region: 'west', isHub: false, capacity: 5 },
+    { id: 'SFO', name: 'San Francisco', region: 'west', isHub: true, capacity: 8 },
+    { id: 'SEA', name: 'Seattle', region: 'west', isHub: true, capacity: 7 },
+    { id: 'STL', name: 'St. Louis', region: 'midwest', isHub: false, capacity: 4 },
+    { id: 'TPA', name: 'Tampa', region: 'southeast', isHub: false, capacity: 5 },
+    { id: 'IAD', name: 'Washington Dulles', region: 'northeast', isHub: false, capacity: 5 },
+    { id: 'DCA', name: 'Washington Reagan', region: 'northeast', isHub: false, capacity: 5 },
+];
+
+const CONNECTIONS = {
+    'ATL': ['JFK','LAX','ORD','DFW','MIA','DEN','BOS','SEA','PHX','CLT','BNA','MSP','DTW','FLL','MSY','RDU','TPA','IAH'],
+    'BOS': ['JFK','LAX','ORD','ATL','MIA','DEN','SFO','SEA','PHL','DCA','IAD','CLT','PIT','RDU'],
+    'CLT': ['ATL','JFK','ORD','DFW','MIA','BOS','PHL','DCA','BNA','RDU','IND'],
+    'ORD': ['JFK','LAX','ATL','DFW','DEN','SFO','SEA','BOS','MIA','PHX','MSP','DTW','LAS','IAH','STL','MCI','IND','CLE','CMH','CVG','PIT','BNA'],
+    'CVG': ['ATL','ORD','DFW','PHL','CLT','BNA','MSP'],
+    'CLE': ['ORD','ATL','JFK','CLT','BNA','PHL','DCA'],
+    'CMH': ['ORD','ATL','CLT','DFW','BNA','PHL'],
+    'DAL': ['ATL','JFK','LAX','ORD','DFW','DEN','LAS','PHX','MIA','IAH','MSY','BNA'],
+    'DFW': ['ATL','JFK','LAX','ORD','DEN','SFO','SEA','LAS','PHX','MIA','IAH','BOS','CLT','MSP','BNA','MSY','PHL','SAN'],
+    'DEN': ['ATL','JFK','LAX','ORD','DFW','SFO','SEA','LAS','PHX','MIA','BOS','MSP','SAN','PDX','HNL'],
+    'DTW': ['ATL','JFK','LAX','ORD','DFW','BOS','MIA','PHL','CLT','MSP','LAS'],
+    'FLL': ['ATL','JFK','LAX','ORD','BOS','EWR','LGA'],
+    'HNL': ['LAX','SFO','JFK','ORD','DEN','SEA','LAS','PHX','IAH'],
+    'IAH': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','LAS','MIA','BOS','MSP','HNL'],
+    'HOU': ['ATL','DAL','DEN','LAS','MSY'],
+    'IND': ['ATL','ORD','DFW','CLT','BNA','PHL','PHX'],
+    'JFK': ['ATL','LAX','ORD','DFW','MIA','DEN','BOS','SFO','SEA','PHX','FLL','LAS','MSP','CLT','MIA','MSY','LGA','EWR','IAD','DCA','TPA','BNA','RDU'],
+    'LGA': ['ATL','ORD','MIA','BOS','CLT','BNA','DCA','IAD','PHL','FLL','RDU'],
+    'EWR': ['ATL','LAX','ORD','MIA','BOS','SFO','LAS','FLL','CLT','MIA'],
+    'LAX': ['ATL','JFK','ORD','DFW','DEN','SFO','SEA','LAS','PHX','MIA','BOS','HNL','PDX','SAN','IAH','OAK','HOU'],
+    'LAS': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','SEA','PHX','MIA','IAH','BOS','MSP','SAN','PDX','OAK'],
+    'MCI': ['ATL','ORD','DFW','DEN','PHX','BNA','CLT','IAH'],
+    'MIA': ['ATL','JFK','LAX','ORD','DFW','BOS','SFO','LAS','PHX','IAH','FLL','MSY','BNA','EWR','CLT'],
+    'MSP': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','SEA','LAS','PHX','IAH','BOS','FLL','DTW','BNA'],
+    'BNA': ['ATL','JFK','LAX','ORD','DFW','DEN','MIA','CLT','BOS','MSP','LAS','PHX','MSY','IAH','CMH','CVG','CLE','RDU','MCI'],
+    'MSY': ['ATL','JFK','LAX','ORD','DFW','DEN','MIA','BOS','IAH','BNA','CLT','DAL','HOU'],
+    'OAK': ['LAX','SFO','LAS','DEN','SEA','PDX'],
+    'PDX': ['LAX','SFO','SEA','DEN','LAS','OAK'],
+    'PHL': ['ATL','JFK','LAX','ORD','MIA','BOS','CLT','BNA','MSP','CLE','CMH','CVG','RDU','DCA','IAD','PIT','FLL'],
+    'PHX': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','SEA','LAS','MIA','IAH','SAN','BNA','MCI','MSP','IND','DTW'],
+    'PIT': ['ATL','JFK','LAX','ORD','BOS','CLT','BNA','PHL'],
+    'RDU': ['ATL','JFK','LAX','ORD','BOS','MIA','CLT','BNA','PHL','LGA','DCA'],
+    'SAN': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','SEA','LAS','PHX','IAH'],
+    'SFO': ['ATL','JFK','LAX','ORD','DFW','DEN','SEA','LAS','PHX','MIA','BOS','HNL','IAH','PDX','OAK','SAN'],
+    'SEA': ['ATL','JFK','LAX','ORD','DFW','DEN','SFO','LAS','PHX','MIA','BOS','HNL','PDX','OAK','SAN','MSP'],
+    'STL': ['ATL','ORD','DFW','DEN','LAS','BNA','CLT','MCI','IAH'],
+    'TPA': ['ATL','JFK','LAX','ORD','BOS','CLT','MIA','BNA','FLL'],
+    'IAD': ['ATL','JFK','LAX','ORD','BOS','MIA','SFO','LAS','CLT','BNA','PHL','RDU','FLL','LGA','DCA'],
+    'DCA': ['ATL','JFK','LAX','ORD','BOS','MIA','SFO','CLT','BNA','PHL','RDU','FLL','LGA','IAD'],
+};
+
+const FIRST_NAMES = ['Mike','Jake','Chris','Matt','Ryan','Tyler','Brandon','Kevin','Brian','Jason','David','James','Eric','Adam','Dan','Nick','Alex','Sam','Ben','Luke','Carlos','Luis','Miguel','Diego','Andres','Omar','Hassan','Raj','Wei','Jin','Kai','Leo','Marco','Pierre','Antonio','Sergio','Rafael','Hiroshi','Yuki','Chen','Raj','Arjun','Vikram','Noah','Ethan','Liam','Mason','Logan','Aiden','Lucas','Oliver','Elijah','Caleb','Nathan','Isaiah','Carter','Wyatt','Gabriel','Julian','Sebastian','Adrian'];
+
+const BACKGROUNDS = ['business consultant','software engineer','graphic designer','personal trainer','nurse','teacher','chef','photographer','musician','architect','doctor','lawyer','freelance writer','marketing manager','pilot','flight attendant','real estate agent','yoga instructor','barber','social worker','veterinarian','dentist','pharmacist','therapist','chef','artist','model','entertainer'];
+
+function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function generateManName() { return randomFrom(FIRST_NAMES); }
+
+function generateMan(playerPrefs) {
+    const prefs = shuffle(PREFERENCES).slice(0, randomInt(2, 5));
+    const hiddenPrefs = shuffle(PREFERENCES.filter(p => !prefs.includes(p))).slice(0, randomInt(1, 3));
+    const age = randomInt(18, 55);
+    const avatar = randomFrom(AVATARS.slice(0, 12));
+    const name = generateManName();
+    const background = randomFrom(BACKGROUNDS);
+    const turnLayover = randomInt(2, 12);
+
+    const matchingPrefs = prefs.filter(p => playerPrefs.includes(p));
+    const matchPercent = Math.min(99, Math.max(15, 40 + matchingPrefs.length * 15 + randomInt(-10, 10)));
+
+    return {
+        id: Date.now() + Math.random(),
+        name, age, avatar, background,
+        preferences: prefs,
+        hiddenPrefs,
+        matchPercent,
+        turnsLeft: turnLayover,
+        maxTurns: turnLayover,
+        credits: matchPercent > 70 ? 3 : matchPercent > 45 ? 2 : 1,
+    };
+}
+
+function generateAirportMen(airport, playerPrefs, count) {
+    const men = [];
+    for (let i = 0; i < count; i++) {
+        men.push(generateMan(playerPrefs));
+    }
+    return men;
+}
+
+// ==================== DISTANCE ====================
+
+const REGION_DISTANCES = {
+    northeast: { northeast: 1, southeast: 2, midwest: 2, south: 3, west: 4, hawaii: 6 },
+    southeast: { northeast: 2, southeast: 1, midwest: 2, south: 1, west: 4, hawaii: 6 },
+    midwest: { northeast: 2, southeast: 2, midwest: 1, south: 2, west: 3, hawaii: 6 },
+    south: { northeast: 3, southeast: 1, midwest: 2, south: 1, west: 3, hawaii: 6 },
+    west: { northeast: 4, southeast: 4, midwest: 3, south: 3, west: 1, hawaii: 3 },
+    hawaii: { northeast: 6, southeast: 6, midwest: 6, south: 6, west: 3, hawaii: 1 },
+};
+
+function getFlightCost(fromAirport, toAirport) {
+    const from = AIRPORTS.find(a => a.id === fromAirport);
+    const to = AIRPORTS.find(a => a.id === toAirport);
+    if (!from || !to) return 99;
+    if (fromAirport === toAirport) return 0;
+    const direct = CONNECTIONS[fromAirport] && CONNECTIONS[fromAirport].includes(toAirport);
+    if (direct) {
+        const dist = REGION_DISTANCES[from.region][to.region];
+        return dist <= 1 ? 1 : dist <= 2 ? 2 : 3;
+    }
+    return 4;
+}
+
+function getFlightTime(fromAirport, toAirport) {
+    const cost = getFlightCost(fromAirport, toAirport);
+    return cost;
+}
+
+// ==================== STATE ====================
+
+let gameState = {
+    activeCharacterId: null,
+    characters: {},
+};
+
+let currentView = 'browse';
+let currentFilter = 'here';
+let pendingArrivals = [];
+
+function createNewCharacter(name, avatar, prefs) {
+    const id = 'char_' + Date.now();
+    const startAirport = randomFrom(['JFK','LAX','ORD','ATL','DFW','SFO','MIA','DEN','SEA','BOS']);
+
+    const world = {
+        turnCounter: 1,
+        airports: {},
+        delayTurns: 0,
+    };
+
+    AIRPORTS.forEach(a => {
+        world.airports[a.id] = { men: [] };
+    });
+
+    const menCount = randomInt(2, 4);
+    const startingMen = generateAirportMen(startAirport, prefs, menCount);
+    world.airports[startAirport].men = startingMen;
+
+    gameState.characters[id] = {
+        id,
+        name,
+        avatar,
+        currentAirport: startAirport,
+        credits: 5,
+        preferences: prefs,
+        stats: { encounters: 0, bestMatch: 0, totalCreditsEarned: 0 },
+        world,
+        history: { flights: [], encounters: [] },
+    };
+
+    gameState.activeCharacterId = id;
+    saveGame();
+    return id;
+}
+
+function getActiveChar() {
+    return gameState.characters[gameState.activeCharacterId];
+}
+
+// ==================== SAVE/LOAD ====================
+
+function saveGame() {
+    try {
+        localStorage.setItem('layover_save', JSON.stringify(gameState));
+    } catch(e) { console.warn('Save failed', e); }
+}
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem('layover_save');
+        if (raw) {
+            gameState = JSON.parse(raw);
+            return true;
+        }
+    } catch(e) { console.warn('Load failed', e); }
+    return false;
+}
+
+// ==================== MEN MANAGEMENT ====================
+
+function advanceTurns(char) {
+    char.world.turnCounter++;
+
+    Object.keys(char.world.airports).forEach(airportId => {
+        const port = char.world.airports[airportId];
+        port.men.forEach(m => { m.turnsLeft--; });
+        port.men = port.men.filter(m => m.turnsLeft > 0);
+    });
+
+    if (char.world.delayTurns > 0) {
+        char.world.delayTurns--;
+    }
+
+    const playerAirport = char.currentAirport;
+    const currentMen = char.world.airports[playerAirport].men;
+    if (currentMen.length < 3 && Math.random() < 0.4) {
+        const arriving = generateAirportMen(playerAirport, char.preferences, randomInt(1, 3));
+        char.world.airports[playerAirport].men.push(...arriving);
+        pendingArrivals.push(...arriving);
+    }
+
+    Object.keys(char.world.airports).forEach(airportId => {
+        if (airportId === playerAirport) return;
+        const port = char.world.airports[airportId];
+        if (port.men.length < 2 && Math.random() < 0.25) {
+            const arriving = generateAirportMen(airportId, char.preferences, randomInt(1, 2));
+            port.men.push(...arriving);
+        }
+    });
+
+    saveGame();
+}
+
+function showArrivalScreen(airportId, delay) {
+    const airport = AIRPORTS.find(a => a.id === airportId);
+    document.getElementById('arrival-icon').textContent = delay > 0 ? '⚠️' : '✈️';
+    document.getElementById('arrival-title').textContent = delay > 0
+        ? `Delayed at ${airport.name}`
+        : `Arrived at ${airport.name}`;
+    document.getElementById('arrival-subtitle').textContent = airportId;
+
+    const delayEl = document.getElementById('arrival-delay');
+    if (delay > 0) {
+        delayEl.style.display = 'flex';
+        delayEl.textContent = `Your flight was delayed ${delay} turn${delay > 1 ? 's' : ''}. Time passed while you waited.`;
+    } else {
+        delayEl.style.display = 'none';
+    }
+
+    const newMenEl = document.getElementById('arrival-newmen');
+    const menListEl = document.getElementById('arrival-men-list');
+    if (pendingArrivals.length > 0) {
+        newMenEl.style.display = '';
+        menListEl.innerHTML = pendingArrivals.map(m => `
+            <div class="profile-card" style="margin-bottom:8px;">
+                <div class="profile-top">
+                    <div class="profile-avatar">${m.avatar}</div>
+                    <div class="profile-main">
+                        <div class="profile-name">${m.name}, ${m.age}</div>
+                        <div class="profile-location">${m.background}</div>
+                    </div>
+                    <div class="match-badge ${m.matchPercent >= 70 ? 'match-high' : m.matchPercent >= 45 ? 'match-mid' : 'match-low'}">${m.matchPercent}%</div>
+                </div>
+                <div class="profile-prefs">
+                    ${m.preferences.slice(0, 3).map(p => `<span class="profile-pref">${p}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
+        pendingArrivals = [];
+    } else {
+        newMenEl.style.display = 'none';
+    }
+
+    showScreen('arrival-screen');
+}
+
+function endArrival() {
+    showScreen('game-screen');
+    renderGame();
+}
+
+// ==================== ENCOUNTER ====================
+
+function startEncounter(man) {
+    const char = getActiveChar();
+    const success = man.matchPercent > randomInt(10, 90);
+    let creditsEarned = 0;
+    const activities = [];
+
+    if (success) {
+        const possibleActivities = ACTIVITIES.filter(a => !a.requireMatch || man.matchPercent >= a.requireMatch);
+        const numActivities = randomInt(1, Math.min(3, possibleActivities.length));
+        const chosen = shuffle(possibleActivities).slice(0, numActivities);
+
+        chosen.forEach(act => {
+            const actSuccess = Math.random() < (man.matchPercent / 100);
+            activities.push({ name: act.name, success: actSuccess });
+            if (actSuccess) creditsEarned += 1;
+        });
+
+        creditsEarned += man.credits;
+    }
+
+    char.stats.encounters++;
+    if (man.matchPercent > char.stats.bestMatch) {
+        char.stats.bestMatch = man.matchPercent;
+    }
+    char.stats.totalCreditsEarned += creditsEarned;
+    char.credits += creditsEarned;
+
+    char.history.encounters.push({
+        manName: man.name,
+        manAge: man.age,
+        airport: char.currentAirport,
+        compatibility: man.matchPercent,
+        success,
+        creditsEarned,
+        activities: activities.map(a => a.name),
+        timestamp: Date.now(),
+    });
+
+    advanceTurns(char);
+
+    document.getElementById('encounter-avatar').textContent = man.avatar;
+    document.getElementById('encounter-name').textContent = `${man.name}, ${man.age}`;
+    document.getElementById('encounter-airport').textContent = `${AIRPORTS.find(a => a.id === char.currentAirport).name} Airport`;
+
+    const matchEl = document.getElementById('encounter-match');
+    matchEl.textContent = man.matchPercent + '%';
+    matchEl.style.color = man.matchPercent >= 70 ? '#2ecc71' : man.matchPercent >= 45 ? '#f1c40f' : '#e74c3c';
+
+    const actContainer = document.getElementById('encounter-activities');
+    actContainer.innerHTML = '';
+    activities.forEach(act => {
+        const row = document.createElement('div');
+        row.className = 'activity-row';
+        row.innerHTML = `
+            <span class="activity-name">${act.name}</span>
+            <span class="activity-result ${act.success ? 'success' : 'fail'}">${act.success ? '✓ Great time' : '✗ Awkward'}</span>
+        `;
+        actContainer.appendChild(row);
+    });
+
+    const rewardEl = document.getElementById('encounter-reward');
+    if (creditsEarned > 0) {
+        rewardEl.style.display = 'block';
+        document.getElementById('reward-text').textContent = `+${creditsEarned} credits earned!`;
+    } else {
+        rewardEl.style.display = 'none';
+    }
+
+    showScreen('encounter-screen');
+}
+
+function endEncounter() {
+    showScreen('game-screen');
+    renderGame();
+}
+
+// ==================== FLIGHTS ====================
+
+function openFlightModal(man) {
+    const char = getActiveChar();
+    const destAirport = man.airport || char.currentAirport;
+
+    const allMen = [];
+    Object.keys(char.world.airports).forEach(aid => {
+        char.world.airports[aid].men.forEach(m => {
+            allMen.push({ ...m, airport: aid });
+        });
+    });
+
+    const targetMen = allMen.filter(m => m.id !== man.id);
+    if (targetMen.length === 0 && !man) {
+        return;
+    }
+
+    const flights = [];
+    const seen = new Set();
+
+    targetMen.forEach(m => {
+        if (seen.has(m.airport)) return;
+        seen.add(m.airport);
+        const cost = getFlightCost(char.currentAirport, m.airport);
+        const time = getFlightTime(char.currentAirport, m.airport);
+        const delay = Math.random() < 0.2 ? randomInt(1, 3) : 0;
+        flights.push({
+            airport: m.airport,
+            airportName: AIRPORTS.find(a => a.id === m.airport).name,
+            cost,
+            time,
+            delay,
+            men: targetMen.filter(mm => mm.airport === m.airport),
+        });
+    });
+
+    flights.sort((a, b) => a.cost - b.cost);
+
+    const dest = AIRPORTS.find(a => a.id === man.airport);
+    document.getElementById('flight-dest-name').textContent = dest ? dest.name : 'Unknown';
+
+    const modalBody = document.getElementById('flight-modal-body');
+    const optionsDiv = document.getElementById('flight-options');
+
+    optionsDiv.innerHTML = '';
+
+    flights.forEach(f => {
+        const canAfford = char.credits >= f.cost;
+        const opt = document.createElement('div');
+        opt.className = 'flight-option';
+        opt.style.marginBottom = '8px';
+        opt.innerHTML = `
+            <div class="flight-route">
+                <span style="font-weight:600;">${f.airport}</span>
+                <span class="flight-arrow">→</span>
+                <span style="color:#888; font-size:13px;">${f.airportName}</span>
+            </div>
+            <div class="flight-details">
+                <div class="flight-cost">${f.cost} credits</div>
+                <div class="flight-time">${f.time} turns${f.delay ? ` (delayed ${f.delay} turns)` : ''}</div>
+                <div style="font-size:12px; color:#888;">${f.men.length} men</div>
+            </div>
+        `;
+        if (canAfford) {
+            opt.onclick = () => takeFlight(f);
+        } else {
+            opt.style.opacity = '0.4';
+        }
+        optionsDiv.appendChild(opt);
+    });
+
+    if (flights.length === 0) {
+        modalBody.textContent = 'No flights available right now.';
+    } else {
+        modalBody.textContent = `You have ${char.credits} credits. Choose a flight:`;
+    }
+
+    openModal('flight-modal');
+}
+
+function takeFlight(flight) {
+    const char = getActiveChar();
+    char.credits -= flight.cost;
+
+    const fromAirport = char.history.flights.length > 0 ? char.history.flights[char.history.flights.length - 1].to : 'START';
+
+    if (flight.delay > 0) {
+        char.world.delayTurns = flight.delay;
+        for (let i = 0; i < flight.delay; i++) advanceTurns(char);
+    }
+
+    char.currentAirport = flight.airport;
+
+    char.history.flights.push({
+        from: fromAirport,
+        to: flight.airport,
+        cost: flight.cost,
+        delayed: flight.delay > 0,
+        delayTurns: flight.delay,
+        timestamp: Date.now(),
+    });
+
+    advanceTurns(char);
+    closeModal('flight-modal');
+    saveGame();
+
+    showArrivalScreen(flight.airport, flight.delay);
+}
+
+// ==================== UI ====================
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+}
+
+function toggleCharDropdown() {
+    document.getElementById('char-dropdown').classList.toggle('open');
+}
+
+function renderTitleScreen() {
+    const list = document.getElementById('char-list');
+    list.innerHTML = '';
+
+    const chars = Object.values(gameState.characters);
+    if (chars.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">✈️</div><p>No characters yet. Create one to start!</p></div>';
+        return;
+    }
+
+    chars.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'char-card';
+        card.onclick = () => {
+            gameState.activeCharacterId = c.id;
+            saveGame();
+            showScreen('game-screen');
+            renderGame();
+        };
+        card.innerHTML = `
+            <div class="char-avatar">${c.avatar}</div>
+            <div class="char-info">
+                <div class="char-name">${c.name}</div>
+                <div class="char-stats">
+                    ${AIRPORTS.find(a => a.id === c.currentAirport)?.name || c.currentAirport} ·
+                    ${c.credits} credits ·
+                    ${c.stats.encounters} encounters
+                </div>
+            </div>
+        `;
+        list.appendChild(card);
+    });
+}
+
+function renderCreateScreen() {
+    const picker = document.getElementById('avatar-picker');
+    picker.innerHTML = '';
+    AVATARS.forEach(a => {
+        const opt = document.createElement('div');
+        opt.className = 'avatar-option';
+        opt.textContent = a;
+        opt.onclick = () => {
+            picker.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+            opt.classList.add('selected');
+        };
+        picker.appendChild(opt);
+    });
+    picker.children[0].classList.add('selected');
+
+    const prefPicker = document.getElementById('pref-picker');
+    prefPicker.innerHTML = '';
+    PREFERENCES.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'pref-chip';
+        chip.textContent = p;
+        chip.onclick = () => chip.classList.toggle('selected');
+        prefPicker.appendChild(chip);
+    });
+}
+
+function createCharacter() {
+    const name = document.getElementById('char-name-input').value.trim();
+    if (!name) { alert('Enter a name'); return; }
+
+    const avatarEl = document.querySelector('#avatar-picker .avatar-option.selected');
+    if (!avatarEl) { alert('Choose an avatar'); return; }
+    const avatar = avatarEl.textContent;
+
+    const prefs = [...document.querySelectorAll('#pref-picker .pref-chip.selected')].map(c => c.textContent);
+    if (prefs.length < 2) { alert('Select at least 2 preferences'); return; }
+
+    createNewCharacter(name, avatar, prefs);
+    showScreen('game-screen');
+    renderGame();
+}
+
+function renderGame() {
+    const char = getActiveChar();
+    if (!char) return;
+
+    document.getElementById('header-avatar').textContent = char.avatar;
+    document.getElementById('header-name').textContent = char.name;
+    document.getElementById('header-credits').textContent = char.credits;
+
+    const dropdown = document.getElementById('char-dropdown');
+    dropdown.innerHTML = '';
+    Object.values(gameState.characters).forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'char-dropdown-item' + (c.id === char.id ? ' active' : '');
+        item.innerHTML = `<span>${c.avatar}</span> <span>${c.name}</span>`;
+        item.onclick = (e) => {
+            e.stopPropagation();
+            gameState.activeCharacterId = c.id;
+            saveGame();
+            dropdown.classList.remove('open');
+            renderGame();
+        };
+        dropdown.appendChild(item);
+    });
+
+    const airport = AIRPORTS.find(a => a.id === char.currentAirport);
+    document.getElementById('current-airport-code').textContent = airport ? `${airport.id} — ${airport.name}` : char.currentAirport;
+    document.getElementById('turn-counter').textContent = char.world.turnCounter;
+
+    const delayBanner = document.getElementById('delay-banner');
+    if (char.world.delayTurns > 0) {
+        delayBanner.style.display = 'flex';
+        delayBanner.textContent = `⚠️ Flight delayed! ${char.world.delayTurns} turn${char.world.delayTurns > 1 ? 's' : ''} remaining.`;
+    } else {
+        delayBanner.style.display = 'none';
+    }
+
+    renderProfileList();
+}
+
+function renderProfileList() {
+    const char = getActiveChar();
+    const container = document.getElementById('profile-list');
+    const titleEl = document.getElementById('section-title');
+    container.innerHTML = '';
+
+    const allMen = [];
+    Object.keys(char.world.airports).forEach(aid => {
+        char.world.airports[aid].men.forEach(m => {
+            allMen.push({ ...m, airport: aid });
+        });
+    });
+
+    const filteredMen = currentFilter === 'here'
+        ? allMen.filter(m => m.airport === char.currentAirport)
+        : allMen;
+
+    titleEl.textContent = currentFilter === 'here' ? 'Men at this airport' : 'All men everywhere';
+
+    filteredMen.sort((a, b) => {
+        const distA = getFlightCost(char.currentAirport, a.airport);
+        const distB = getFlightCost(char.currentAirport, b.airport);
+        if (distA !== distB) return distA - distB;
+        return b.matchPercent - a.matchPercent;
+    });
+
+    if (filteredMen.length === 0) {
+        const msg = currentFilter === 'here'
+            ? 'No men at this airport. Fly somewhere or wait for arrivals...'
+            : 'No men found nearby. Wait for new arrivals...';
+        container.innerHTML = `<div class="empty-state"><div class="icon">🤷</div><p>${msg}</p></div>`;
+        return;
+    }
+
+    filteredMen.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'profile-card';
+
+        const matchClass = m.matchPercent >= 70 ? 'match-high' : m.matchPercent >= 45 ? 'match-mid' : 'match-low';
+        const timerClass = m.turnsLeft <= 2 ? 'urgent' : '';
+        const cost = getFlightCost(char.currentAirport, m.airport);
+        const canAfford = char.credits >= cost;
+        const isCurrentAirport = m.airport === char.currentAirport;
+
+        const airportName = AIRPORTS.find(a => a.id === m.airport)?.name || m.airport;
+
+        const shownPrefs = m.preferences.slice(0, 3);
+        const hiddenCount = m.preferences.length - shownPrefs.length + m.hiddenPrefs.length;
+
+        card.innerHTML = `
+            <div class="profile-top">
+                <div class="profile-avatar">${m.avatar}</div>
+                <div class="profile-main">
+                    <div class="profile-name">${m.name}, ${m.age}</div>
+                    <div class="profile-location">${airportName}${!isCurrentAirport ? ` · ${cost}💳 to fly` : ''}</div>
+                </div>
+                <div class="match-badge ${matchClass}">${m.matchPercent}%</div>
+            </div>
+            <div class="profile-prefs">
+                ${shownPrefs.map(p => `<span class="profile-pref">${p}</span>`).join('')}
+                ${hiddenCount > 0 ? `<span class="profile-pref hidden-pref">+${hiddenCount} hidden</span>` : ''}
+            </div>
+            <div class="profile-bottom">
+                <span class="timer-badge ${timerClass}">⏱ ${m.turnsLeft} turn${m.turnsLeft > 1 ? 's' : ''} left</span>
+                ${isCurrentAirport
+                    ? `<button class="fly-btn" onclick="meetManById('${m.id}')">Meet ${m.name}</button>`
+                    : `<button class="fly-btn" ${canAfford ? '' : 'disabled'} onclick="flyToAirport('${m.airport}')">Fly to ${m.airport}</button>`
+                }
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function meetManById(manId) {
+    const char = getActiveChar();
+    const numId = parseFloat(manId);
+    let foundMan = null;
+
+    const port = char.world.airports[char.currentAirport];
+    const idx = port.men.findIndex(m => m.id === numId || String(m.id) === String(manId));
+    if (idx !== -1) {
+        foundMan = port.men[idx];
+        port.men.splice(idx, 1);
+    }
+
+    if (foundMan) {
+        advanceTurns(char);
+        saveGame();
+        startEncounter(foundMan);
+    }
+}
+
+function flyToAirport(airportId) {
+    const char = getActiveChar();
+    const cost = getFlightCost(char.currentAirport, airportId);
+    if (char.credits < cost) return;
+
+    char.credits -= cost;
+    const delay = Math.random() < 0.2 ? randomInt(1, 3) : 0;
+
+    const fromAirport = char.currentAirport;
+
+    if (delay > 0) {
+        char.world.delayTurns = delay;
+        for (let i = 0; i < delay; i++) advanceTurns(char);
+    }
+
+    char.currentAirport = airportId;
+
+    char.history.flights.push({
+        from: fromAirport,
+        to: airportId,
+        cost,
+        delayed: delay > 0,
+        delayTurns: delay,
+        timestamp: Date.now(),
+    });
+
+    advanceTurns(char);
+    saveGame();
+
+    showArrivalScreen(airportId, delay);
+}
+
+function showGameTab(tab) {
+    currentView = tab;
+    document.querySelectorAll('.bottom-nav .nav-btn').forEach(b => b.classList.remove('active'));
+
+    if (tab === 'browse') {
+        document.getElementById('profile-list').style.display = '';
+        document.getElementById('section-title').style.display = '';
+        document.getElementById('filter-bar').style.display = '';
+        document.getElementById('profile-view').style.display = 'none';
+        document.querySelectorAll('.bottom-nav .nav-btn')[0].classList.add('active');
+    } else if (tab === 'profile') {
+        document.getElementById('profile-list').style.display = 'none';
+        document.getElementById('section-title').style.display = 'none';
+        document.getElementById('filter-bar').style.display = 'none';
+        document.getElementById('profile-view').style.display = '';
+        document.querySelectorAll('.bottom-nav .nav-btn')[1].classList.add('active');
+        renderProfileView();
+    }
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+    });
+    renderProfileList();
+}
+
+function renderProfileView() {
+    const char = getActiveChar();
+    const container = document.getElementById('profile-content');
+    const airport = AIRPORTS.find(a => a.id === char.currentAirport);
+
+    let flightsHtml = char.history.flights.slice().reverse().map(f => {
+        const fromName = AIRPORTS.find(a => a.id === f.from)?.name || f.from;
+        const toName = AIRPORTS.find(a => a.id === f.to)?.name || f.to;
+        return `
+            <div class="history-item flight">
+                <div class="history-title">${fromName || 'Start'} → ${toName}</div>
+                <div class="history-detail">${f.cost} credits${f.delayed ? ` · Delayed ${f.delayTurns} turns` : ' · On time'}</div>
+                <div class="history-time">${new Date(f.timestamp).toLocaleString()}</div>
+            </div>
+        `;
+    }).join('');
+
+    let encountersHtml = char.history.encounters.slice().reverse().map(e => {
+        const airportName = AIRPORTS.find(a => a.id === e.airport)?.name || e.airport;
+        return `
+            <div class="history-item encounter">
+                <div class="history-title">${e.manName}, ${e.manAge} — ${airportName}</div>
+                <div class="history-detail">
+                    ${e.compatibility}% match · ${e.success ? '✓ Success' : '✗ No spark'}
+                    ${e.creditsEarned > 0 ? ` · +${e.creditsEarned} credits` : ''}
+                </div>
+                ${e.activities.length > 0 ? `<div class="history-detail">Activities: ${e.activities.join(', ')}</div>` : ''}
+                <div class="history-time">${new Date(e.timestamp).toLocaleString()}</div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="profile-header">
+            <div class="char-avatar">${char.avatar}</div>
+            <div class="char-name">${char.name}</div>
+            <div style="color:#888; margin-top:4px;">${airport ? airport.name : char.currentAirport} Airport</div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value">${char.credits}</div>
+                <div class="stat-label">Credits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${char.stats.encounters}</div>
+                <div class="stat-label">Encounters</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${char.stats.bestMatch}%</div>
+                <div class="stat-label">Best Match</div>
+            </div>
+        </div>
+
+        <div class="section-title">Flight History</div>
+        ${flightsHtml || '<div class="empty-state"><p>No flights yet</p></div>'}
+
+        <div class="section-title">Encounter History</div>
+        ${encountersHtml || '<div class="empty-state"><p>No encounters yet</p></div>'}
+
+        <div style="margin-top:32px; text-align:center;">
+            <button class="btn btn-secondary btn-small" onclick="showScreen('title-screen'); renderTitleScreen();">Switch Character</button>
+        </div>
+    `;
+}
+
+// ==================== INIT ====================
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.char-switcher')) {
+        document.getElementById('char-dropdown').classList.remove('open');
+    }
+});
+
+function init() {
+    loadGame();
+
+    if (gameState.activeCharacterId && gameState.characters[gameState.activeCharacterId]) {
+        showScreen('game-screen');
+        renderGame();
+    } else {
+        showScreen('title-screen');
+        renderTitleScreen();
+    }
+
+    renderCreateScreen();
+}
+
+init();
+</script>
+</body>
+</html>
