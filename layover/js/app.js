@@ -22,11 +22,13 @@ function shuffle(arr) {
 
 function generateManName() { return randomFrom(FIRST_NAMES); }
 
+const HUMAN_AVATARS = AVATARS.slice(0, 11); // exclude 🦃🦅 animals at end of human set
 function generateMan(playerPrefs) {
     const prefs = shuffle(PREFERENCES).slice(0, randomInt(2, 5));
+    // hiddenPrefs are not shown initially; revealed after meeting and affect activity bonus
     const hiddenPrefs = shuffle(PREFERENCES.filter(p => !prefs.includes(p))).slice(0, randomInt(1, 3));
     const age = randomInt(18, 55);
-    const avatar = randomFrom(AVATARS.slice(0, 12));
+    const avatar = randomFrom(HUMAN_AVATARS);
     const name = generateManName();
     const background = randomFrom(BACKGROUNDS);
     const layoverMinutes = randomInt(120, 960);
@@ -74,14 +76,23 @@ function createNewCharacter(name, avatar, prefs) {
         world.airports[a.id] = { men: [] };
     });
 
-    const menCount = randomInt(2, 4);
-    const startingMen = generateAirportMen(startAirport, prefs, menCount);
-    world.airports[startAirport].men = startingMen;
+    // seed world: start airport 2-4, others sparsely populated so Browse All isn't empty and small airports aren't ghost towns
+    const startMen = randomInt(2, 4);
+    world.airports[startAirport].men = generateAirportMen(startAirport, prefs, startMen);
+    AIRPORTS.forEach(a => {
+        if (a.id === startAirport) return;
+        const isHub = a.isHub;
+        const spawnChance = isHub ? 0.7 : 0.4;
+        if (Math.random() < spawnChance) {
+            const count = isHub ? randomInt(1, 2) : 1;
+            world.airports[a.id].men = generateAirportMen(a.id, prefs, count);
+        }
+    });
 
     gameState.characters[id] = {
         id, name, avatar,
         currentAirport: startAirport,
-        credits: 5,
+        credits: 9,
         preferences: prefs,
         stats: { encounters: 0, bestMatch: 0, totalCreditsEarned: 0 },
         world,
@@ -124,11 +135,26 @@ function loadGame() {
                         if (!c.world.airports[a.id]) c.world.airports[a.id] = { men: [] };
                         if (!c.world.airports[a.id].men) c.world.airports[a.id].men = [];
                     });
+                    // reseed sparse worlds (pre-fix saves had only start airport populated)
+                    const totalMen = Object.values(c.world.airports).reduce((s, p) => s + (p.men?.length || 0), 0);
+                    if (totalMen < 8) {
+                        AIRPORTS.forEach(a => {
+                            if (a.id === c.currentAirport) return;
+                            if (c.world.airports[a.id].men.length === 0) {
+                                const spawnChance = a.isHub ? 0.6 : 0.35;
+                                if (Math.random() < spawnChance) {
+                                    c.world.airports[a.id].men = generateAirportMen(a.id, c.preferences, a.isHub ? randomInt(1,2) : 1);
+                                }
+                            }
+                        });
+                    }
                 }
                 if (!c.history) c.history = { flights:[], encounters:[] };
                 if (!c.stats) c.stats = { encounters:0, bestMatch:0, totalCreditsEarned:0 };
                 ensureLoyalty(c);
                 if (c.loungePass && !c.loungePass.expires) c.loungePass = null;
+                // normalize credits floor for old saves
+                if (c.credits < 3) c.credits = Math.max(c.credits, 3);
             });
             return true;
         }
@@ -138,6 +164,7 @@ function loadGame() {
 
 // ---- time advancement ----
 function advanceTime(char, minutes) {
+    const oldTime = char.world.gameTime;
     char.world.gameTime += minutes;
 
     Object.keys(char.world.airports).forEach(airportId => {
@@ -146,16 +173,19 @@ function advanceTime(char, minutes) {
         port.men = port.men.filter(m => m.minutesLeft > 0);
     });
 
-    // periodic arrivals: every 6h tick
-    if (char.world.gameTime % 360 < minutes) {
+    // periodic arrivals: every 6h tick — loop to handle long jumps (flights + waits)
+    const oldTick = Math.floor(oldTime / 360);
+    const newTick = Math.floor(char.world.gameTime / 360);
+    for (let tick = oldTick + 1; tick <= newTick; tick++) {
         const playerAirport = char.currentAirport;
-        const currentMen = char.world.airports[playerAirport].men;
-        // bonus: if lounge accessible, slightly higher chance of arrivals and higher quality
         const loungeBonus = getLoungeBonus(char) > 0;
         const arrivalChance = loungeBonus ? 0.7 : 0.5;
-        if (currentMen.length < 4 && Math.random() < arrivalChance) {
+
+        // guarantee at least one arrival if player airport empty-ish and we crossed a tick
+        const currentMen = char.world.airports[playerAirport].men;
+        const needsMen = currentMen.length < 2;
+        if ((needsMen || currentMen.length < 4) && (needsMen || Math.random() < arrivalChance)) {
             const arriving = generateAirportMen(playerAirport, char.preferences, randomInt(1, loungeBonus ? 3 : 2));
-            // lounge men: boost one to higher match
             if (loungeBonus && arriving.length > 0) {
                 const best = arriving.reduce((a,b)=> a.matchPercent > b.matchPercent ? a : b);
                 best.matchPercent = Math.min(95, best.matchPercent + 10 + randomInt(0,10));
@@ -168,6 +198,7 @@ function advanceTime(char, minutes) {
         Object.keys(char.world.airports).forEach(airportId => {
             if (airportId === playerAirport) return;
             const port = char.world.airports[airportId];
+            // remote airports idle less often; but ensure sparse seeding
             if (port.men.length < 2 && Math.random() < 0.25) {
                 const arriving = generateAirportMen(airportId, char.preferences, randomInt(1, 2));
                 port.men.push(...arriving);
@@ -175,13 +206,32 @@ function advanceTime(char, minutes) {
         });
     }
 
-    // lounge pass expiry is checked via time comparison, no action needed
     saveGame();
 }
 
 function wait() {
     const char = getActiveChar();
     advanceTime(char, 30);
+    renderGame();
+}
+
+function waitUntilNextFlight() {
+    const char = getActiveChar();
+    const flights = getFlightsFrom(char.currentAirport, char.world.gameTime, 1440);
+    if (flights.length === 0) {
+        advanceTime(char, 60);
+        renderGame();
+        return;
+    }
+    const next = flights[0];
+    const waitTime = Math.max(0, next.scheduledDeparture - char.world.gameTime);
+    if (waitTime <= 0) {
+        advanceTime(char, 30);
+    } else {
+        // fast-forward to boarding (30m before departure) to feel active
+        const jump = Math.max(30, waitTime);
+        advanceTime(char, jump);
+    }
     renderGame();
 }
 
@@ -199,17 +249,49 @@ function startEncounter(man) {
 
     if (success) {
         const possibleActivities = ACTIVITIES.filter(a => !a.requireMatch || adjustedMatch >= a.requireMatch);
-        const numActivities = randomInt(1, Math.min(3, possibleActivities.length));
-        const chosen = shuffle(possibleActivities).slice(0, numActivities);
+        // weight activities that share prefs between player and man (including hidden) — makes hidden matter
+        const weighted = possibleActivities.map(act => {
+            const isPref = man.preferences.includes(act.name) || man.hiddenPrefs.includes(act.name);
+            const playerHas = char.preferences.includes(act.name);
+            const shared = isPref && playerHas;
+            return { act, weight: shared ? 3 : isPref ? 1.5 : 1 };
+        });
+        // weighted shuffle pick — shared prefs bias selection
+        const pool = [];
+        weighted.forEach(({act, weight}) => {
+            const copies = Math.round(weight * 2);
+            for (let i=0;i<copies;i++) pool.push(act);
+        });
+        const desired = randomInt(1, Math.min(3, possibleActivities.length));
+        const chosenSet = new Set();
+        while (chosenSet.size < desired && pool.length > 0) {
+            const pick = randomFrom(pool);
+            chosenSet.add(pick);
+            const idx = pool.indexOf(pick);
+            if (idx !== -1) pool.splice(idx,1);
+        }
+        if (chosenSet.size === 0) chosenSet.add(randomFrom(possibleActivities));
+        const chosen = [...chosenSet];
 
         chosen.forEach(act => {
-            const actSuccess = Math.random() < (adjustedMatch / 100);
-            activities.push({ name: act.name, success: actSuccess });
+            const isPref = man.preferences.includes(act.name) || man.hiddenPrefs.includes(act.name);
+            const playerHas = char.preferences.includes(act.name);
+            const sharedBonus = (isPref && playerHas) ? 0.15 : 0;
+            const hiddenBonus = (man.hiddenPrefs.includes(act.name) && playerHas) ? 0.10 : 0; // discovering hidden is rewarding
+            const base = adjustedMatch / 100;
+            const actSuccess = Math.random() < Math.min(0.95, base + sharedBonus + hiddenBonus);
+            activities.push({ name: act.name + (sharedBonus>0 ? ' ★' : ''), success: actSuccess, raw: act.name });
             if (actSuccess) creditsEarned += 1;
             totalTime += act.duration;
         });
 
         creditsEarned += man.credits;
+    }
+
+    // consolation: never leave empty-handed — failed spark still earns 1 credit for time spent
+    if (!success) {
+        creditsEarned = 1;
+        totalTime = 30; // shorter consolation encounter
     }
 
     char.stats.encounters++;
@@ -226,7 +308,7 @@ function startEncounter(man) {
         compatibility: man.matchPercent,
         success,
         creditsEarned,
-        activities: activities.map(a => a.name),
+        activities: activities.map(a => a.raw || a.name),
         gameTime: char.world.gameTime,
         timestamp: Date.now(),
         loungeBonus: loungeBonus > 0,
@@ -241,8 +323,9 @@ function startEncounter(man) {
     document.getElementById('encounter-airport').textContent = `${airportObj ? airportObj.name : char.currentAirport} Airport · ${formatDuration(totalTime)} spent${loungeNote}`;
 
     const matchEl = document.getElementById('encounter-match');
-    matchEl.textContent = man.matchPercent + '%';
-    matchEl.style.color = man.matchPercent >= 70 ? '#2ecc71' : man.matchPercent >= 45 ? '#f1c40f' : '#e74c3c';
+    matchEl.textContent = loungeBonus > 0 ? `${man.matchPercent}% → ${adjustedMatch}%` : man.matchPercent + '%';
+    matchEl.title = loungeBonus > 0 ? `Base ${man.matchPercent}% +15 lounge = ${adjustedMatch}% effective` : '';
+    matchEl.style.color = adjustedMatch >= 70 ? '#2ecc71' : adjustedMatch >= 45 ? '#f1c40f' : '#e74c3c';
 
     const actContainer = document.getElementById('encounter-activities');
     actContainer.innerHTML = '';
@@ -510,13 +593,14 @@ function renderLoungeBanner() {
             </div>
         `;
     } else {
-        // Check if day pass active for different airline? Already handled as accessible
-        // Show options to buy pass
-        const best = lounges[0]; // show first lounge, allow buying each
+        const best = lounges[0];
+        // hint if they have an airline-wide pass for another hub
+        const hasGlobalPass = char.loungePass && char.loungePass.expires > char.world.gameTime;
+        const globalPassMsg = hasGlobalPass ? ` · You have ${getAirlineById(char.loungePass.airline).name} pass (${formatDuration(loungePassTimeLeft(char))} left, valid at any ${getAirlineById(char.loungePass.airline).name} hub)` : '';
         banner.innerHTML = `
             <div class="lounge-banner-info">
                 <div class="lounge-banner-title">${best.icon} ${best.lounge} <span style="font-weight:400; color:#888; font-size:12px;">· ${best.name} hub</span></div>
-                <div class="lounge-banner-sub">Gold+ gets in free · Day pass 2💳 for 4h · +15% encounter success</div>
+                <div class="lounge-banner-sub">Gold+ free · Day pass 2💳 for 4h at any ${best.name} hub · +15% success${globalPassMsg}</div>
             </div>
             <div class="lounge-banner-actions" id="lounge-actions"></div>
         `;
@@ -575,7 +659,12 @@ function renderFlightSchedule() {
         const row = document.createElement('div');
         row.className = 'flight-row' + (f.delayed ? ' flight-delayed' : '');
 
-        // store flight data for booking via dataset
+        const schedArrivalTod = (f.tod + f.duration) % 1440;
+        const actualDepTod = (f.tod + (f.delayed ? f.delayMinutes : 0)) % 1440;
+        const actualArrTod = (f.tod + f.duration + (f.delayed ? f.delayMinutes : 0)) % 1440;
+        const timeLine = f.delayed
+            ? `Sched <span style="color:#e0e0e0; text-decoration:line-through; opacity:0.6;">${formatTimeOfDay(f.tod)} → ${formatTimeOfDay(schedArrivalTod)}</span> <span style="color:#f1c40f;">Actual ${formatTimeOfDay(actualDepTod)} → ${formatTimeOfDay(actualArrTod)}</span>`
+            : `Sched <span style="color:#e0e0e0;">${formatTimeOfDay(f.tod)} → ${formatTimeOfDay(schedArrivalTod)}</span>`;
         row.innerHTML = `
             <div class="flight-row-info">
                 <div class="flight-airline-row">
@@ -586,7 +675,7 @@ function renderFlightSchedule() {
                 </div>
                 <div class="flight-dest">${f.to} — ${destAirport ? destAirport.name : f.to}</div>
                 <div class="flight-meta">
-                    Sched <span style="color:#e0e0e0;">${formatTimeOfDay(f.tod)} → ${formatTimeOfDay((f.tod + f.duration) % 1440)}</span> · ${formatDuration(f.duration)} · <span style="color:#e0e0e0;">Departs in ${formatDuration(waitTime)}</span>
+                    ${timeLine} · ${formatDuration(f.duration)} · <span style="color:#e0e0e0;">Departs in ${formatDuration(waitTime)}</span>
                 </div>
                 <div style="margin-top:6px;"><span class="flight-status ${statusClass}">${statusText}</span></div>
             </div>
@@ -649,6 +738,9 @@ function renderProfileList() {
         const isCurrentAirport = m.airport === char.currentAirport;
 
         const airportName = AIRPORTS.find(a => a.id === m.airport)?.name || m.airport;
+        const isDirect = CONNECTIONS[char.currentAirport]?.includes(m.airport);
+        const cost = getFlightCost(char.currentAirport, m.airport);
+        const itineraryHint = isCurrentAirport ? '' : isDirect ? `${cost}💳 direct` : `${cost}💳 · no direct — 1+ stops`;
 
         const shownPrefs = m.preferences.slice(0, 3);
         const hiddenCount = m.preferences.length - shownPrefs.length + m.hiddenPrefs.length;
@@ -658,7 +750,7 @@ function renderProfileList() {
                 <div class="profile-avatar">${m.avatar}</div>
                 <div class="profile-main">
                     <div class="profile-name">${m.name}, ${m.age}</div>
-                    <div class="profile-location">${airportName}${!isCurrentAirport ? ` · ${formatDuration(m.minutesLeft)} layover` : ''}</div>
+                    <div class="profile-location">${airportName}${!isCurrentAirport ? ` · ${formatDuration(m.minutesLeft)} layover · ${itineraryHint}` : ''}</div>
                 </div>
                 <div class="match-badge ${matchClass}">${m.matchPercent}%</div>
             </div>
@@ -670,7 +762,7 @@ function renderProfileList() {
                 <span class="timer-badge ${timerClass}">⏱ ${formatDuration(m.minutesLeft)} left</span>
                 ${isCurrentAirport
                     ? `<button class="meet-btn fly-btn">Meet ${m.name}</button>`
-                    : `<button class="view-flights-btn fly-btn">View Flights</button>`
+                    : `<button class="view-flights-btn fly-btn" ${isDirect ? '' : 'title="No direct flights — see flights tab for connections"'}>${isDirect ? 'View Flights' : 'Connections'}</button>`
                 }
             </div>
         `;
@@ -842,6 +934,7 @@ function init() {
     document.getElementById('create-start-btn')?.addEventListener('click', createCharacter);
 
     document.getElementById('wait-btn')?.addEventListener('click', wait);
+    document.getElementById('wait-next-btn')?.addEventListener('click', waitUntilNextFlight);
     document.getElementById('browse-men-btn')?.addEventListener('click', () => showGameTab('browse'));
     document.getElementById('view-flights-btn')?.addEventListener('click', () => showGameTab('flights'));
     document.getElementById('end-encounter-btn')?.addEventListener('click', endEncounter);
@@ -869,6 +962,7 @@ function init() {
 
 // expose for html inline compat if needed
 window.wait = wait;
+window.waitUntilNextFlight = waitUntilNextFlight;
 window.bookFlight = bookFlight;
 window.meetManById = meetManById;
 window.showGameTab = showGameTab;

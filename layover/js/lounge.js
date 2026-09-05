@@ -13,13 +13,14 @@ export function hasLounge(airportId) {
 }
 
 export function canAccessLounge(char, airlineId, airportId) {
-    // airline-specific hub only
+    // airline-specific hub only — pass is airline-wide, valid at any hub of that airline for 4h
     const airline = getAirlineById(airlineId);
     if (!airline || !airline.hubs.includes(airportId)) return false;
     const rec = getLoyaltyFor(char, airlineId);
     if (['gold','platinum'].includes(rec.tier)) return true;
-    // check day pass
-    if (char.loungePass && char.loungePass.airline === airlineId && char.loungePass.airport === airportId && char.loungePass.expires > char.world.gameTime) {
+    // day pass: airline-wide
+    if (char.loungePass && char.loungePass.airline === airlineId && char.loungePass.expires > char.world.gameTime) {
+        // ensure current airport is a hub of that airline (already checked above)
         return true;
     }
     return false;
@@ -48,13 +49,19 @@ export function purchaseLoungePass(char, airlineId) {
     if (!airline || !airline.hubs.includes(airportId)) return { ok:false, reason:'No lounge for that airline here' };
     if (canAccessLounge(char, airlineId, airportId)) return { ok:false, reason:'Already have access' };
     char.credits -= LOUNGE_PASS_COST;
-    char.loungePass = { airline: airlineId, airport: airportId, expires: char.world.gameTime + LOUNGE_PASS_DURATION };
+    char.loungePass = { airline: airlineId, expires: char.world.gameTime + LOUNGE_PASS_DURATION, purchasedAt: airportId };
+    // keep legacy airport field for migration but not required for validation
+    char.loungePass.airport = airportId;
     return { ok:true };
 }
 
 export function isLoungePassActive(char) {
     if (!char.loungePass) return false;
-    return char.loungePass.expires > char.world.gameTime && char.loungePass.airport === char.currentAirport;
+    if (char.loungePass.expires <= char.world.gameTime) return false;
+    // airline-wide: active if current airport is a hub of the pass airline
+    const airline = getAirlineById(char.loungePass.airline);
+    if (!airline) return false;
+    return airline.hubs.includes(char.currentAirport);
 }
 
 export function loungePassTimeLeft(char) {

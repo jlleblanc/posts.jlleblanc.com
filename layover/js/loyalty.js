@@ -3,9 +3,9 @@ import { AIRLINES } from './data.js';
 export const TIERS = ['member','silver','gold','platinum'];
 
 export const TIER_THRESHOLDS = {
-    silver:   { miles: 5000, segments: 8 },
-    gold:     { miles: 15000, segments: 25 },
-    platinum: { miles: 30000, segments: 50 },
+    silver:   { miles: 4000, segments: 6 },
+    gold:     { miles: 12000, segments: 15 },
+    platinum: { miles: 25000, segments: 30 },
 };
 
 export const TIER_DISCOUNT = {
@@ -60,13 +60,13 @@ export function getEffectiveCost(baseCost, char, airlineId) {
     const tier = rec ? rec.tier : 'member';
     const disc = TIER_DISCOUNT[tier] || 0;
     const discounted = baseCost * (1 - disc);
-    // at least 1 credit, and discount caps to 1 credit off for cheap flights
-    // apply floor but ensure min 1
-    const floored = Math.max(1, Math.floor(discounted + 0.0001)); // floor rather than round to feel earned
-    // alternative: if disc >0 and baseCost>1, ensure at least 1 off at gold+
-    if (tier === 'gold' && floored === baseCost && baseCost > 1) return baseCost - 1;
-    if (tier === 'platinum' && floored >= baseCost && baseCost > 1) return Math.max(1, baseCost - 1);
-    return floored;
+    // use round for friendlier pricing, floor for generosity; ensure at least 1 off when tier>member and cost>1
+    const rounded = Math.max(1, Math.round(discounted));
+    if (tier !== 'member' && rounded >= baseCost && baseCost > 1) return baseCost - 1;
+    // silver on cost2: 1.8 round2 would not save, so ensure floor benefit for cheap flights
+    const floored = Math.max(1, Math.floor(discounted + 0.0001));
+    if (tier === 'silver' && floored < rounded) return floored;
+    return Math.min(rounded, floored);
 }
 
 export function getNextTierProgress(char, airlineId) {

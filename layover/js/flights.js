@@ -6,11 +6,12 @@ export function getFlightCost(fromAirport, toAirport) {
     if (!from || !to) return 2;
     if (fromAirport === toAirport) return 0;
     const direct = CONNECTIONS[fromAirport] && CONNECTIONS[fromAirport].includes(toAirport);
-    if (direct) {
-        const dist = REGION_DISTANCES[from.region][to.region];
-        return dist <= 1 ? 1 : dist <= 2 ? 2 : 3;
-    }
-    return 4;
+    if (!direct) return 4;
+    const miles = haversineMiles(from.lat, from.lon, to.lat, to.lon);
+    if (miles < 500) return 1;
+    if (miles < 1200) return 2;
+    if (miles < 2800) return 3;
+    return 3; // long haul still 3, 4 reserved for non-direct
 }
 
 // Haversine distance in miles

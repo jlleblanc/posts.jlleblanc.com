@@ -6,11 +6,12 @@ import { seededRng, seededInt } from './prng.js';
 let TIMETABLE = null; // { [airportId]: FlightTemplate[] }
 
 function frequencyForAirport(airport) {
-    if (airport.capacity >= 10) return { min:4, max:5 };
-    if (airport.capacity >= 8) return { min:3, max:4 };
-    if (airport.capacity >= 6) return { min:2, max:3 };
-    if (airport.capacity >= 5) return { min:2, max:2 };
-    return { min:1, max:2 };
+    // tuned down after symmetrizing CONNECTIONS (ATL 35 dest) to keep ~40-80 flights per hub
+    if (airport.capacity >= 10) return { min:2, max:3 };
+    if (airport.capacity >= 8) return { min:2, max:3 };
+    if (airport.capacity >= 6) return { min:1, max:2 };
+    if (airport.capacity >= 5) return { min:1, max:2 };
+    return { min:1, max:1 };
 }
 
 function todBuckets(isLongHaul) {
