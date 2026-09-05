@@ -31,7 +31,9 @@ function generateMan(playerPrefs) {
     const avatar = randomFrom(HUMAN_AVATARS);
     const name = generateManName();
     const background = randomFrom(BACKGROUNDS);
-    const layoverMinutes = randomInt(120, 960);
+    // layovers from 45m (tight sprint) to 16h; weighted so short layovers exist and matter
+    const layoverRoll = Math.random();
+    const layoverMinutes = layoverRoll < 0.15 ? randomInt(45, 90) : layoverRoll < 0.35 ? randomInt(90, 180) : layoverRoll < 0.65 ? randomInt(180, 360) : randomInt(360, 960);
     const matchingPrefs = prefs.filter(p => playerPrefs.includes(p));
     const matchPercent = Math.min(99, Math.max(15, 40 + matchingPrefs.length * 15 + randomInt(-10, 10)));
     return {
@@ -238,11 +240,19 @@ function waitUntilNextFlight() {
 // ---- encounters ----
 function startEncounter(man) {
     const char = getActiveChar();
+    const layover = man.minutesLeft;
     const loungeBonus = getLoungeBonus(char); // 0.15 if accessible
     const adjustedMatch = Math.min(99, man.matchPercent + (loungeBonus * 100));
-    // success threshold lowered slightly if in lounge
+    // layover pressure reduces effective compatibility — rushed encounters are less likely to click
+    let layoverPenalty = 0;
+    let layoverNote = '';
+    if (layover < 60) { layoverPenalty = 20; layoverNote = 'rushed — only ' + formatDuration(layover) + ' layover'; }
+    else if (layover < 120) { layoverPenalty = 15; layoverNote = 'tight — ' + formatDuration(layover) + ' layover'; }
+    else if (layover < 180) { layoverPenalty = 10; layoverNote = 'short — ' + formatDuration(layover) + ' layover'; }
+    else if (layover < 240) { layoverPenalty = 5; }
+    const effectiveMatch = Math.max(5, Math.min(99, adjustedMatch - layoverPenalty));
     const successRoll = randomInt(10, 90);
-    const success = adjustedMatch > successRoll;
+    const success = effectiveMatch > successRoll;
     let creditsEarned = 0;
     const activities = [];
     let totalTime = 45;
@@ -294,6 +304,29 @@ function startEncounter(man) {
         totalTime = 30; // shorter consolation encounter
     }
 
+    // Enforce layover cap — encounter cannot outlast the man's layover
+    let wasCapped = false;
+    let wasRushed = layoverPenalty > 0;
+    if (totalTime > layover) {
+        wasCapped = true;
+        // trim longest activities first until it fits
+        while (activities.length > 0 && totalTime > layover) {
+            let idx = 0;
+            let maxDur = -1;
+            for (let i = 0; i < activities.length; i++) {
+                const key = activities[i].raw || activities[i].name.replace(' ★','');
+                const dur = ACTIVITIES.find(a => a.name === key)?.duration || 30;
+                if (dur > maxDur) { maxDur = dur; idx = i; }
+            }
+            const removed = activities.splice(idx, 1)[0];
+            totalTime -= maxDur;
+            if (removed.success) creditsEarned = Math.max(success ? man.credits : 1, creditsEarned - 1);
+        }
+        if (totalTime > layover) totalTime = layover;
+        // if we had to trim, ensure at least the base chat fits; if layover <30, it's just a quick hello
+        if (totalTime < 15) totalTime = Math.min(layover, 15);
+    }
+
     char.stats.encounters++;
     if (man.matchPercent > char.stats.bestMatch) {
         char.stats.bestMatch = man.matchPercent;
@@ -306,12 +339,17 @@ function startEncounter(man) {
         manAge: man.age,
         airport: char.currentAirport,
         compatibility: man.matchPercent,
+        effectiveCompatibility: effectiveMatch,
         success,
         creditsEarned,
         activities: activities.map(a => a.raw || a.name),
         gameTime: char.world.gameTime,
         timestamp: Date.now(),
         loungeBonus: loungeBonus > 0,
+        layover,
+        layoverPenalty,
+        wasCapped,
+        totalTime,
     });
 
     advanceTime(char, totalTime);
@@ -320,15 +358,33 @@ function startEncounter(man) {
     document.getElementById('encounter-name').textContent = `${man.name}, ${man.age}`;
     const airportObj = AIRPORTS.find(a => a.id === char.currentAirport);
     const loungeNote = loungeBonus > 0 ? ' · ✨ lounge boost' : '';
-    document.getElementById('encounter-airport').textContent = `${airportObj ? airportObj.name : char.currentAirport} Airport · ${formatDuration(totalTime)} spent${loungeNote}`;
+    const cappedNote = wasCapped ? ' · ⏱ cut short by layover' : '';
+    const rushedNote = layoverNote ? ' · ' + layoverNote : '';
+    document.getElementById('encounter-airport').textContent = `${airportObj ? airportObj.name : char.currentAirport} Airport · ${formatDuration(totalTime)} spent · ${formatDuration(layover)} layover${loungeNote}${cappedNote}${rushedNote}`;
 
     const matchEl = document.getElementById('encounter-match');
-    matchEl.textContent = loungeBonus > 0 ? `${man.matchPercent}% → ${adjustedMatch}%` : man.matchPercent + '%';
-    matchEl.title = loungeBonus > 0 ? `Base ${man.matchPercent}% +15 lounge = ${adjustedMatch}% effective` : '';
-    matchEl.style.color = adjustedMatch >= 70 ? '#2ecc71' : adjustedMatch >= 45 ? '#f1c40f' : '#e74c3c';
+    // show effective after layover penalty and lounge
+    const displayMatch = loungeBonus > 0 || layoverPenalty > 0 ? `${man.matchPercent}% → ${effectiveMatch}%` : man.matchPercent + '%';
+    let titleParts = [];
+    if (loungeBonus > 0) titleParts.push(`+15 lounge`);
+    if (layoverPenalty > 0) titleParts.push(`-${layoverPenalty} rushed (${formatDuration(layover)} layover)`);
+    matchEl.textContent = displayMatch;
+    matchEl.title = titleParts.length ? `Base ${man.matchPercent}% ${titleParts.join(' ')} = ${effectiveMatch}% effective` : '';
+    matchEl.style.color = effectiveMatch >= 70 ? '#2ecc71' : effectiveMatch >= 45 ? '#f1c40f' : '#e74c3c';
 
     const actContainer = document.getElementById('encounter-activities');
     actContainer.innerHTML = '';
+    if (wasCapped) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:12px; color:#f1c40f; background:rgba(241,196,15,0.12); border:1px solid rgba(241,196,15,0.3); border-radius:8px; padding:8px 10px; margin-bottom:8px; text-align:center;';
+        note.textContent = `⏱ His flight boards in ${formatDuration(layover)} — encounter cut short to ${formatDuration(totalTime)}.`;
+        actContainer.appendChild(note);
+    } else if (layoverPenalty > 0) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:12px; color:#aaa; background:rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; margin-bottom:8px; text-align:center;';
+        note.textContent = `⏱ Tight layover (${formatDuration(layover)}) — success chance reduced by ${layoverPenalty}%.`;
+        actContainer.appendChild(note);
+    }
     activities.forEach(act => {
         const row = document.createElement('div');
         row.className = 'activity-row';
@@ -341,8 +397,12 @@ function startEncounter(man) {
 
     const rewardEl = document.getElementById('encounter-reward');
     if (creditsEarned > 0) {
+        let rewardText = `+${creditsEarned} credits earned!`;
+        if (loungeBonus>0) rewardText += ' (lounge boosted)';
+        if (wasCapped) rewardText += ' · cut short';
+        else if (layoverPenalty>0) rewardText += ` · -${layoverPenalty}% layover penalty`;
         rewardEl.style.display = 'block';
-        document.getElementById('reward-text').textContent = `+${creditsEarned} credits earned!${loungeBonus>0 ? ' (lounge boosted)' : ''}`;
+        document.getElementById('reward-text').textContent = rewardText;
     } else {
         rewardEl.style.display = 'none';
     }
@@ -744,6 +804,8 @@ function renderProfileList() {
 
         const shownPrefs = m.preferences.slice(0, 3);
         const hiddenCount = m.preferences.length - shownPrefs.length + m.hiddenPrefs.length;
+        const rushedHint = m.minutesLeft < 60 ? 'rushed' : m.minutesLeft < 120 ? 'tight' : m.minutesLeft < 180 ? 'short' : '';
+        const rushedLabel = isCurrentAirport && rushedHint ? ` · ${rushedHint} layover` : '';
 
         card.innerHTML = `
             <div class="profile-top">
@@ -759,7 +821,7 @@ function renderProfileList() {
                 ${hiddenCount > 0 ? `<span class="profile-pref hidden-pref">+${hiddenCount} hidden</span>` : ''}
             </div>
             <div class="profile-bottom">
-                <span class="timer-badge ${timerClass}">⏱ ${formatDuration(m.minutesLeft)} left</span>
+                <span class="timer-badge ${timerClass}">⏱ ${formatDuration(m.minutesLeft)} left${rushedLabel}</span>
                 ${isCurrentAirport
                     ? `<button class="meet-btn fly-btn">Meet ${m.name}</button>`
                     : `<button class="view-flights-btn fly-btn" ${isDirect ? '' : 'title="No direct flights — see flights tab for connections"'}>${isDirect ? 'View Flights' : 'Connections'}</button>`
@@ -853,14 +915,18 @@ function renderProfileView() {
         } else {
             const e = event.data;
             const airportName = AIRPORTS.find(a => a.id === e.airport)?.name || e.airport;
+            const eff = e.effectiveCompatibility ? ` → ${e.effectiveCompatibility}% eff` : '';
+            const layoverInfo = e.layover ? ` · ${formatDuration(e.layover)} layover` : '';
+            const cappedInfo = e.wasCapped ? ' · ⏱ cut short' : e.layoverPenalty ? ` · -${e.layoverPenalty}% rushed` : '';
             return `
                 <div class="history-item encounter">
                     <div class="history-title">💕 ${e.manName}, ${e.manAge} — ${airportName} ${e.loungeBonus ? '✨ lounge' : ''}</div>
                     <div class="history-detail">
-                        ${e.compatibility}% match · ${e.success ? '✓ Success' : '✗ No spark'}
+                        ${e.compatibility}%${eff} match · ${e.success ? '✓ Success' : '✗ No spark'}${layoverInfo}${cappedInfo}
                         ${e.creditsEarned > 0 ? ` · +${e.creditsEarned} credits` : ''}
                     </div>
                     ${e.activities.length > 0 ? `<div class="history-detail">Activities: ${e.activities.join(', ')}</div>` : ''}
+                    ${e.totalTime ? `<div class="history-detail">${formatDuration(e.totalTime)} spent</div>` : ''}
                     <div class="history-time">${formatGameTime(e.gameTime)}</div>
                 </div>
             `;
