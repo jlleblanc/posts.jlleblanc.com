@@ -59,7 +59,7 @@
     </div>
 
     <div class="game-body">
-        <div class="location-bar">
+        <div class="location-bar" id="location-bar">
             <div>
                 <div class="location-name">You are at</div>
                 <div class="location-code" id="current-airport-code"></div>
@@ -82,6 +82,10 @@
 
         <!-- Browse Tab -->
         <div id="browse-tab" style="display:none;">
+            <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                <button class="btn btn-wait btn-small" id="wait-btn-browse">Wait 30 min</button>
+                <button class="btn btn-secondary btn-small" id="wait-next-btn-browse" title="Fast-forward to next departure">⏩ Next flight</button>
+            </div>
             <div class="filter-bar" id="filter-bar">
                 <button class="filter-btn active" data-filter="here">At This Airport</button>
                 <button class="filter-btn" data-filter="all">All Airports</button>
@@ -91,6 +95,11 @@
             <div style="margin-top:16px;">
                 <button class="btn btn-secondary btn-small" id="view-flights-btn">View Flights</button>
             </div>
+        </div>
+
+        <!-- Profile Tab (now inside game-body for correct scrolling/nav) -->
+        <div id="profile-tab" style="display:none;">
+            <div id="profile-content" class="profile-screen-content"></div>
         </div>
     </div>
 
@@ -129,11 +138,6 @@
     </div>
 
     <button class="btn btn-primary" id="end-encounter-btn">Continue</button>
-</div>
-
-<!-- Profile/History Screen (rendered inside game-screen body) -->
-<div id="profile-view" style="display:none;">
-    <div class="profile-screen-content" id="profile-content"></div>
 </div>
 
 <!-- Arrival Screen -->

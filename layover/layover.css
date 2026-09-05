@@ -597,7 +597,11 @@
 
         .reward-text { font-size: 20px; font-weight: 700; color: #2ecc71; }
 
-        /* Profile Screen */
+        /* Profile Screen - now inside game-body as #profile-tab */
+        #profile-tab {
+            display: block;
+            padding-bottom: 8px;
+        }
         #profile-view {
             flex: 1;
             overflow-y: auto;
@@ -605,17 +609,28 @@
             padding-bottom: 80px;
         }
 
-        .profile-screen-content { max-width: 500px; margin: 0 auto; width: 100%; }
+        .profile-screen-content { max-width: 520px; margin: 0 auto; width: 100%; }
 
-        .profile-header { text-align: center; padding: 24px 0; }
-        .profile-header .char-avatar { font-size: 64px; margin-bottom: 12px; }
-        .profile-header .char-name { font-size: 24px; font-weight: 700; }
+        .profile-header {
+            text-align: center;
+            padding: 20px 16px;
+            background: linear-gradient(135deg, rgba(233,69,96,0.12), rgba(22,33,62,0.4));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+        .profile-header .char-avatar { font-size: 56px; margin-bottom: 8px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
+        .profile-header .char-name { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+        .profile-header .char-sub { font-size: 13px; color: #aaa; margin-top: 4px; }
+        .profile-header .char-meta { font-size: 12px; color: #666; margin-top: 6px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .profile-header .char-meta span { background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 20px; }
 
-        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
 
-        .stat-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; text-align: center; }
-        .stat-value { font-size: 24px; font-weight: 700; color: #e94560; }
-        .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 10px; text-align: center; }
+        .stat-value { font-size: 22px; font-weight: 800; color: #e94560; }
+        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        .stat-card.highlight { background: rgba(233,69,96,0.08); border-color: rgba(233,69,96,0.2); }
 
         .history-item {
             padding: 14px 16px;
@@ -712,13 +727,13 @@
         .discount-tag { font-size: 11px; color: #2ecc71; font-weight: 700; }
 
         /* Loyalty grid */
-        .loyalty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        @media (max-width: 500px) { .loyalty-grid { grid-template-columns: 1fr; } }
+        .loyalty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        @media (max-width: 520px) { .loyalty-grid { grid-template-columns: 1fr; } }
         .loyalty-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 12px;
-            padding: 14px;
+            padding: 12px;
             border-top: 3px solid transparent;
         }
         .loyalty-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -732,6 +747,11 @@
         .loyalty-progress { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
         .loyalty-progress-bar { height: 100%; background: #e94560; transition: width 0.3s; }
         .loyalty-next { font-size: 11px; color: #666; margin-top: 6px; }
+        .timeline-filter { display: flex; gap: 8px; margin: 12px 0 16px; }
+        .timeline-filter .filter-btn { flex: 1; font-size: 12px; padding: 8px 10px; }
+        .profile-section-head { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; margin-bottom: 12px; }
+        .profile-section-head .section-title { margin: 0; }
+        .profile-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
 
         @media (max-width: 400px) {
             .game-logo { font-size: 36px; letter-spacing: 4px; }

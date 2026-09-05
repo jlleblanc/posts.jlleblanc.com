@@ -62,6 +62,7 @@ let gameState = {
 
 let currentView = 'flights';
 let currentFilter = 'here';
+let timelineFilter = 'all';
 let pendingArrivals = [];
 
 function createNewCharacter(name, avatar, prefs) {
@@ -621,7 +622,11 @@ function renderGame() {
     document.getElementById('current-airport-code').textContent = airport ? `${airport.id} — ${airport.name}` : char.currentAirport;
     document.getElementById('game-time-display').textContent = formatGameTime(char.world.gameTime);
 
-    renderLoungeBanner();
+    if (currentView !== 'profile') renderLoungeBanner();
+    else {
+        const b = document.getElementById('lounge-banner');
+        if (b) b.style.display = 'none';
+    }
 
     if (currentView === 'flights') renderFlightSchedule();
     else if (currentView === 'browse') renderProfileList();
@@ -629,6 +634,7 @@ function renderGame() {
 }
 
 function renderLoungeBanner() {
+    if (currentView === 'profile') return;
     const char = getActiveChar();
     const banner = document.getElementById('lounge-banner');
     const lounges = getLoungesAt(char.currentAirport);
@@ -859,7 +865,18 @@ function showGameTab(tab) {
 
     document.getElementById('flights-tab').style.display = tab === 'flights' ? '' : 'none';
     document.getElementById('browse-tab').style.display = tab === 'browse' ? '' : 'none';
-    document.getElementById('profile-view').style.display = tab === 'profile' ? '' : 'none';
+    const profileTab = document.getElementById('profile-tab');
+    if (profileTab) profileTab.style.display = tab === 'profile' ? '' : 'none';
+    // legacy support
+    const legacyProfile = document.getElementById('profile-view');
+    if (legacyProfile) legacyProfile.style.display = 'none';
+
+    // location bar + lounge banner belong to Flights/Browse, not Profile
+    const locBar = document.getElementById('location-bar');
+    const loungeBanner = document.getElementById('lounge-banner');
+    const isProfile = tab === 'profile';
+    if (locBar) locBar.style.display = isProfile ? 'none' : '';
+    if (loungeBanner && isProfile) loungeBanner.style.display = 'none';
 
     document.querySelectorAll('.bottom-nav .nav-btn').forEach(b => b.classList.remove('active'));
 
@@ -877,29 +894,40 @@ function showGameTab(tab) {
 
 function setFilter(filter) {
     currentFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(b => {
+    document.querySelectorAll('#filter-bar .filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.filter === filter);
     });
     renderProfileList();
+}
+
+function setTimelineFilter(filter) {
+    timelineFilter = filter;
+    renderProfileView();
 }
 
 function renderProfileView() {
     const char = getActiveChar();
     ensureLoyalty(char);
     const container = document.getElementById('profile-content');
+    if (!container) return;
     const airport = AIRPORTS.find(a => a.id === char.currentAirport);
 
-    const allEvents = [];
+    const totalMiles = Object.values(char.loyalty || {}).reduce((s, r) => s + (r.miles||0), 0);
+    const totalFlights = char.history.flights.length;
+    const dayNum = Math.floor(char.world.gameTime / 1440) + 1;
 
-    char.history.flights.forEach(f => {
-        allEvents.push({ type: 'flight', gameTime: f.gameTime, data: f });
-    });
-    char.history.encounters.forEach(e => {
-        allEvents.push({ type: 'encounter', gameTime: e.gameTime, data: e });
-    });
+    const allEvents = [];
+    char.history.flights.forEach(f => { allEvents.push({ type: 'flight', gameTime: f.gameTime, data: f }); });
+    char.history.encounters.forEach(e => { allEvents.push({ type: 'encounter', gameTime: e.gameTime, data: e }); });
     allEvents.sort((a, b) => b.gameTime - a.gameTime);
 
-    let timelineHtml = allEvents.map(event => {
+    const filteredEvents = allEvents.filter(ev => {
+        if (timelineFilter === 'flights') return ev.type === 'flight';
+        if (timelineFilter === 'encounters') return ev.type === 'encounter';
+        return true;
+    });
+
+    let timelineHtml = filteredEvents.slice(0, 50).map(event => {
         if (event.type === 'flight') {
             const f = event.data;
             const fromName = AIRPORTS.find(a => a.id === f.from)?.name || f.from;
@@ -933,21 +961,26 @@ function renderProfileView() {
         }
     }).join('');
 
-    // loyalty grid
+    if (filteredEvents.length === 0) {
+        timelineHtml = `<div class="empty-state"><div class="icon">${timelineFilter==='flights'?'✈️':timelineFilter==='encounters'?'💕':'📭'}</div><p>${timelineFilter==='all'?'No events yet — go meet someone or take a flight!':`No ${timelineFilter} yet`}</p></div>`;
+    } else if (allEvents.length > 50 && timelineFilter==='all') {
+        timelineHtml += `<div style="text-align:center; color:#666; font-size:12px; margin-top:8px;">Showing 50 most recent · ${allEvents.length} total</div>`;
+    }
+
     let loyaltyHtml = '<div class="loyalty-grid">';
     for (const al of AIRLINES) {
         const rec = getLoyaltyFor(char, al.id);
         const prog = getNextTierProgress(char, al.id);
+        const isTop = rec.tier === 'platinum';
         loyaltyHtml += `
             <div class="loyalty-card" style="border-top-color:${al.color}">
                 <div class="loyalty-card-header">
                     <div class="loyalty-card-name"><span>${al.icon}</span> ${al.name}</div>
                     <span class="loyalty-tier ${rec.tier}">${rec.tier}</span>
                 </div>
-                <div class="loyalty-stats">${rec.miles.toLocaleString()} miles · ${rec.segments} segments</div>
+                <div class="loyalty-stats">${rec.miles.toLocaleString()} miles · ${rec.segments} flights</div>
                 <div class="loyalty-progress"><div class="loyalty-progress-bar" style="width:${prog.pct}%; background:${al.color}"></div></div>
-                <div class="loyalty-next">${prog.next ? `Next: ${prog.next} — need ${prog.needMiles.toLocaleString()} miles or ${prog.needSeg} seg` : 'Top tier — you’re iconic'}</div>
-                <div style="font-size:11px; color:#666; margin-top:4px;">${al.lounge} @ ${al.hubs.join(', ')}</div>
+                <div class="loyalty-next">${isTop ? 'Top tier — you’re iconic ✨' : `Next: ${prog.next} — ${prog.needMiles.toLocaleString()} mi or ${prog.needSeg} flights`}</div>
             </div>
         `;
     }
@@ -957,11 +990,16 @@ function renderProfileView() {
         <div class="profile-header">
             <div class="char-avatar">${char.avatar}</div>
             <div class="char-name">${char.name}</div>
-            <div style="color:#888; margin-top:4px;">${airport ? airport.name : char.currentAirport} Airport</div>
+            <div class="char-sub">${airport ? airport.name + ' · ' + airport.id : char.currentAirport} · Day ${dayNum} · ${formatGameTime(char.world.gameTime).split(', ')[1]}</div>
+            <div class="char-meta">
+                <span>💳 ${char.credits} credits</span>
+                <span>✈️ ${totalFlights} flights</span>
+                <span>📏 ${totalMiles.toLocaleString()} mi</span>
+            </div>
         </div>
 
         <div class="stat-grid">
-            <div class="stat-card">
+            <div class="stat-card highlight">
                 <div class="stat-value">${char.credits}</div>
                 <div class="stat-label">Credits</div>
             </div>
@@ -970,24 +1008,38 @@ function renderProfileView() {
                 <div class="stat-label">Encounters</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">${char.stats.bestMatch}%</div>
+                <div class="stat-value">${char.stats.bestMatch ? char.stats.bestMatch+'%' : '—'}</div>
                 <div class="stat-label">Best Match</div>
             </div>
         </div>
 
-        <div class="section-title">Airline Loyalty</div>
+        <div class="profile-section-head">
+            <div class="section-title" style="margin:0;">Airline Loyalty</div>
+            <span style="font-size:11px; color:#666;">5 airlines · Gold+ = lounge</span>
+        </div>
         ${loyaltyHtml}
 
-        <div class="section-title">Timeline</div>
-        ${timelineHtml || '<div class="empty-state"><p>No events yet</p></div>'}
+        <div class="profile-section-head">
+            <div class="section-title" style="margin:0;">Timeline</div>
+            <span style="font-size:11px; color:#666;">${allEvents.length} events</span>
+        </div>
+        <div class="timeline-filter">
+            <button class="filter-btn ${timelineFilter==='all'?'active':''}" data-tl="all">All</button>
+            <button class="filter-btn ${timelineFilter==='flights'?'active':''}" data-tl="flights">✈️ Flights</button>
+            <button class="filter-btn ${timelineFilter==='encounters'?'active':''}" data-tl="encounters">💕 Encounters</button>
+        </div>
+        <div id="timeline-list">${timelineHtml}</div>
 
-        <div style="margin-top:32px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <div class="profile-actions">
             <button class="btn btn-secondary btn-small" id="switch-char-btn">Switch Character</button>
             <button class="btn btn-primary btn-small" id="new-char-btn2">New Character</button>
         </div>
     `;
     container.querySelector('#switch-char-btn').addEventListener('click', () => { showScreen('title-screen'); renderTitleScreen(); });
     container.querySelector('#new-char-btn2').addEventListener('click', () => { showScreen('create-screen'); renderCreateScreen(); });
+    container.querySelectorAll('[data-tl]').forEach(btn => {
+        btn.addEventListener('click', () => setTimelineFilter(btn.dataset.tl));
+    });
 }
 
 // ---- wiring ----
@@ -1001,12 +1053,14 @@ function init() {
 
     document.getElementById('wait-btn')?.addEventListener('click', wait);
     document.getElementById('wait-next-btn')?.addEventListener('click', waitUntilNextFlight);
+    document.getElementById('wait-btn-browse')?.addEventListener('click', wait);
+    document.getElementById('wait-next-btn-browse')?.addEventListener('click', waitUntilNextFlight);
     document.getElementById('browse-men-btn')?.addEventListener('click', () => showGameTab('browse'));
     document.getElementById('view-flights-btn')?.addEventListener('click', () => showGameTab('flights'));
     document.getElementById('end-encounter-btn')?.addEventListener('click', endEncounter);
     document.getElementById('end-arrival-btn')?.addEventListener('click', endArrival);
     document.getElementById('char-switcher')?.addEventListener('click', toggleCharDropdown);
-    document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => setFilter(b.dataset.filter)));
+    document.querySelectorAll('#filter-bar .filter-btn').forEach(b => b.addEventListener('click', () => setFilter(b.dataset.filter)));
     document.querySelectorAll('.bottom-nav .nav-btn').forEach(b => b.addEventListener('click', () => showGameTab(b.dataset.tab)));
 
     document.addEventListener('click', (e) => {
