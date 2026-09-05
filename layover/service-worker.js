@@ -1,9 +1,18 @@
-const CACHE_NAME = 'layover-v1';
+const CACHE_NAME = 'layover-v2';
 const ASSETS_TO_CACHE = [
   'layover.html',
+  'layover.css',
   'manifest.json',
   'icons/icon-192x192.png',
-  'icons/icon-512x512.png'
+  'icons/icon-512x512.png',
+  'js/app.js',
+  'js/data.js',
+  'js/prng.js',
+  'js/time.js',
+  'js/flights.js',
+  'js/schedule.js',
+  'js/loyalty.js',
+  'js/lounge.js'
 ];
 
 self.addEventListener('install', event => {
