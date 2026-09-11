@@ -1,0 +1,13 @@
+{
+  "name": "Cruising Altitude",
+  "short_name": "Cruising",
+  "description": "Score the most points in a week-long campaign of flights and encounters.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b1c33",
+  "theme_color": "#0b1c33",
+  "icons": [
+    { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

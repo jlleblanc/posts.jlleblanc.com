@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cruising Altitude</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1c33">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="title-screen" class="screen active">
+    <div class="game-logo">Cruising Altitude<span class="sub">score the week · fly · meet · repeat</span></div>
+    <p class="tagline">Pick your interests, catch flights, meet people in terminals — most points at week's end wins.</p>
+    <div id="char-bar" class="char-bar"></div>
+    <div class="row">
+      <button class="btn btn-small" data-advance="30">+30m</button>
+      <button class="btn btn-small" data-advance="60">+1h</button>
+      <button class="btn btn-small" data-advance="180">+3h</button>
+    </div>
+    <div id="clock-line" class="clock-line"></div>
+    <div id="wallet-line" class="wallet-line"></div>
+    <div id="score-line" class="score-line"></div>
+    <div id="arrival-line" class="arrival-line" style="display:none;"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="flights">✈️ Flights</button>
+      <button class="tab" data-tab="people">👥 People here</button>
+      <button class="tab" data-tab="intel">📡 Intel</button>
+      <button class="tab" data-tab="miles">⭐ Miles</button>
+      <button class="tab" data-tab="profile">👤 Profile</button>
+    </div>
+    <div id="tab-flights">
+      <div class="section-title">Departing flights — next 24h (buying boards instantly)</div>
+      <div id="flight-list" class="flight-list"></div>
+    </div>
+    <div id="tab-people" style="display:none;">
+      <div id="lounge-banner" class="lounge-banner" style="display:none;"></div>
+      <div class="section-title">People at this airport right now (bound to real flights)</div>
+      <div id="people-list" class="people-list"></div>
+    </div>
+    <div id="tab-intel" style="display:none;">
+      <div class="section-title">Global view — counts + vibe only (no names, times, or interests)</div>
+      <div id="intel-list" class="intel-list"></div>
+    </div>
+    <div id="tab-miles" style="display:none;">
+      <div class="section-title">Airline loyalty — status erodes if you skip a full week</div>
+      <div id="loyalty-list" class="loyalty-list"></div>
+    </div>
+    <div id="tab-profile" style="display:none;">
+      <div class="section-title">Traveler</div>
+      <div id="profile-char"></div>
+      <div class="interests-box">
+        <div class="section-title">Interests — permanent, chosen at character creation</div>
+        <div id="interest-picker" class="chip-grid"></div>
+      </div>
+      <div class="section-title">Week setup</div>
+      <div id="current-week-line" class="clock-line"></div>
+      <div class="row">
+        <label>Week <input id="week-input" type="number" value="1" min="1" max="999"></label>
+        <label>Start airport
+          <select id="airport-input">
+            <option>JFK</option><option>LAX</option><option>ORD</option><option>ATL</option>
+            <option>DFW</option><option>SFO</option><option>MIA</option><option>DEN</option>
+            <option>SEA</option><option>BOS</option><option>PHX</option><option>HNL</option>
+            <option>ANC</option>
+          </select>
+        </label>
+        <label>Budget
+          <select id="difficulty-input">
+            <option value="unlimited">Unlimited</option>
+            <option value="easy">Easy · $2500</option>
+            <option value="medium" selected>Medium · $1500</option>
+            <option value="hard">Hard · $800</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary btn-small" id="goto-week-btn">Load / start week</button>
+        <button class="btn btn-small" id="restart-week-btn">Restart current week</button>
+      </div>
+      <div class="flight-sub">Loading another week keeps this one saved. Restarting wipes the current week's flights, score, and encounters for this traveler.</div>
+    </div>
+  </div>
+  <div id="encounter-modal" class="modal" style="display:none;"></div>
+  <div id="char-modal" class="modal" style="display:none;"></div>
+  <script src="bundle.js" defer></script>
+</body>
+</html>
