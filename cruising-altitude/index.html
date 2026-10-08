@@ -13,6 +13,7 @@
   <div id="title-screen" class="screen active">
     <div class="game-logo">Cruising Altitude<span class="sub">score the week · fly · meet · repeat</span></div>
     <p class="tagline">Pick your interests, catch flights, meet people in terminals — most points at week's end wins.</p>
+    <div id="webgl-stage" class="webgl-stage" aria-hidden="true"><canvas id="webgl-canvas"></canvas></div>
     <div id="char-bar" class="char-bar"></div>
     <div class="row">
       <button class="btn btn-small" data-advance="30">+30m</button>
@@ -85,5 +86,20 @@
   <div id="encounter-modal" class="modal" style="display:none;"></div>
   <div id="char-modal" class="modal" style="display:none;"></div>
   <script src="bundle.js" defer></script>
+  <script data-pixi-cdn src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js" defer></script>
+  <script type="module">
+    import { boot, renderWebGL } from './webgl/index.js';
+    window.CAWebGL = {
+      render: (state) => renderWebGL(state),
+      lastError: null,
+      setMode: (mode) => { try { localStorage.setItem('ca_webgl', mode); location.reload(); } catch {} },
+    };
+    const canvas = document.getElementById('webgl-canvas');
+    boot({ canvas }).then((res) => {
+      document.getElementById('webgl-stage')?.classList.toggle('fallback', !!res.emojiFallback);
+    }).catch(() => {
+      document.getElementById('webgl-stage')?.classList.add('fallback');
+    });
+  </script>
 </body>
 </html>

@@ -90,4 +90,9 @@ button.act-row.picked { border-color: #2f9df0; background: rgba(47,157,240,.2); 
 .avatar-option.selected { border-color: #2f9df0; background: rgba(47,157,240,.2); }
 .form-error { font-size: 13px; color: #ff7b93; background: rgba(233,69,96,.12); border: 1px solid rgba(233,69,96,.35); border-radius: 8px; padding: 8px 10px; }
 .profile-char-card { display: flex; align-items: center; gap: 12px; background: linear-gradient(135deg, rgba(47,157,240,.12), rgba(22,33,62,.4)); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px; margin-bottom: 4px; }
+.webgl-stage { position: relative; width: 100%; min-height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); background: radial-gradient(120% 100% at 50% 0%, #16325a 0%, #0b1c33 70%); }
+.webgl-stage canvas { width: 100%; height: 340px; display: block; touch-action: pan-y; }
+.webgl-stage.fallback canvas { display: none; }
+.webgl-stage.fallback { min-height: 0; border: none; background: none; }
+.person-card.flash { border-color: #2f9df0; box-shadow: 0 0 0 2px rgba(47,157,240,.6); }
 @media (max-width: 480px) { .game-logo { font-size: 30px; } }

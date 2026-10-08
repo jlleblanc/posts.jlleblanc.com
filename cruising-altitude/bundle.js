@@ -1168,14 +1168,6 @@ function logEncounter(entry) {
   } catch { /* ignore */ }
 }
 
-function getInterests() {
-  try {
-    const raw = localStorage.getItem('ca_interests');
-    if (raw) return JSON.parse(raw).slice(0, MAX_INTERESTS);
-  } catch { /* ignore */ }
-  return ['coffee', 'hookup', 'sex'];
-}
-
 function renderPicker() {
   const c = activeChar();
   const mine = new Set(c ? c.interests : []);
@@ -1427,6 +1419,7 @@ function renderPeople(weekNum, store) {
   for (const p of people) {
     const card = document.createElement('div');
     card.className = 'person-card';
+    card.dataset.personId = p.id;
     const here = p.airportId || trip.airport;
     const route = p.inboundFlight
       ? `${p.inboundFlight.from} → ${here} (here) → ${p.outboundFlight.to} ${p.outboundFlight.flightNumber}`
@@ -1515,6 +1508,28 @@ function render() {
   renderIntel(weekNum);
   renderLoyalty(weekNum, store);
   renderProfile();
+  renderWebGLLayer(weekNum, store);
+}
+
+function renderWebGLLayer(weekNum, store) {
+  try {
+    const g = typeof window !== 'undefined' ? window.CAWebGL : null;
+    if (!g || typeof g.render !== 'function' || !trip) return;
+    const people = visiblePeople(weekNum).map((p) => ({
+      id: p.id, tier: p.tier, minutesLeft: p.minutesLeft, avatar: p.avatar,
+      name: p.name, availableFrom: p.availableFrom, availableUntil: p.availableUntil,
+    }));
+    const flights = getFlightsFrom(trip.airport, trip.gameTime, weekNum, 1440).slice(0, 12).map((f) => ({
+      id: f.id, from: f.from, to: f.to, deal: f.deal, delayed: f.delayed,
+    }));
+    g.render({
+      airport: trip.airport,
+      people,
+      flights,
+      gameTime: trip.gameTime,
+      loungeAccess: !!anyLoungeAccess({ ...trip, loyalty: store.recs }, trip.airport),
+    });
+  } catch { /* WebGL layer never breaks game logic */ }
 }
 
 // Setup inputs mirror the live trip only when the week/character context
@@ -1730,8 +1745,11 @@ document.querySelectorAll('[data-advance]').forEach((b) => {
     render();
   });
 });
-document.querySelectorAll('.tab').forEach((b) => {
-  b.addEventListener('click', () => {
+// The WebGL stage boots async (module + CDN); repaint once it's ready.
+try {
+  window.addEventListener('ca:webgl-ready', () => { try { render(); } catch { /* ignore */ } });
+} catch { /* ignore */ }
+document.querySelectorAll('.tab').forEach((b) => {  b.addEventListener('click', () => {
     activeTab = b.dataset.tab;
     document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
     for (const t of ['flights', 'people', 'intel', 'miles', 'profile']) {
