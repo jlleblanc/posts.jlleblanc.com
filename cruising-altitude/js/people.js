@@ -49,19 +49,20 @@ export function scoreTier(person, playerInterests) {
   return { shared, score, tier };
 }
 
-function buildPerson({ seedStr, inbound, outbound, availableFrom, availableUntil, gameTime, playerInterests }) {
+function buildPerson({ seedStr, airportId, inbound, outbound, availableFrom, availableUntil, gameTime, playerInterests }) {
   const rng = seededRng(seedStr);
   const id = makeIdentity(rng);
   const ints = makeInterests(rng);
   const person = {
     id: seedStr,
+    airportId,
     ...id,
     ...ints,
     inboundFlight: inbound
-      ? { id: inbound.id, from: inbound.from, flightNumber: inbound.flightNumber, actualArrival: inbound.actualArrival }
+      ? { id: inbound.id, from: inbound.from, to: airportId, flightNumber: inbound.flightNumber, actualArrival: inbound.actualArrival }
       : null,
     outboundFlight: {
-      id: outbound.id, to: outbound.to, flightNumber: outbound.flightNumber,
+      id: outbound.id, from: airportId, to: outbound.to, flightNumber: outbound.flightNumber,
       scheduledDeparture: outbound.scheduledDeparture,
     },
     availableFrom,
@@ -101,7 +102,7 @@ export function getPeopleAt(airportId, gameTime, weekNum, playerInterests = []) 
       if (gameTime < from || gameTime >= until) continue;
       people.push(buildPerson({
         seedStr: `pax-${weekNum}-${airportId}-${d.id}-orig-${i}`,
-        inbound: null, outbound: d, availableFrom: from, availableUntil: until,
+        airportId, inbound: null, outbound: d, availableFrom: from, availableUntil: until,
         gameTime, playerInterests,
       }));
     }
@@ -125,7 +126,7 @@ export function getPeopleAt(airportId, gameTime, weekNum, playerInterests = []) 
       if (gameTime < from || gameTime >= until) continue;
       people.push(buildPerson({
         seedStr: `pax-${weekNum}-${airportId}-${a.id}-${d.id}`,
-        inbound: a, outbound: d, availableFrom: from, availableUntil: until,
+        airportId, inbound: a, outbound: d, availableFrom: from, availableUntil: until,
         gameTime, playerInterests,
       }));
     }

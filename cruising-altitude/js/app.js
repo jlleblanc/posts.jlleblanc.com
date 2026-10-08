@@ -376,7 +376,11 @@ function renderCharDraftCount() {
 
 function visiblePeople(weekNum) {
   const met = getMetIds();
-  return getPeopleAt(trip.airport, trip.gameTime, weekNum, getInterests()).filter((p) => !met.has(p.id));
+  return getPeopleAt(trip.airport, trip.gameTime, weekNum, getInterests()).filter((p) =>
+    !met.has(p.id)
+    && (p.airportId || trip.airport) === trip.airport
+    && trip.gameTime >= p.availableFrom
+    && trip.gameTime < p.availableUntil);
 }
 
 // ---- booking ----
@@ -488,9 +492,10 @@ function renderPeople(weekNum, store) {
   for (const p of people) {
     const card = document.createElement('div');
     card.className = 'person-card';
+    const here = p.airportId || trip.airport;
     const route = p.inboundFlight
-      ? `in ${p.inboundFlight.from} → out ${p.outboundFlight.to} ${p.outboundFlight.flightNumber}`
-      : `originating → out ${p.outboundFlight.to} ${p.outboundFlight.flightNumber}`;
+      ? `${p.inboundFlight.from} → ${here} (here) → ${p.outboundFlight.to} ${p.outboundFlight.flightNumber}`
+      : `Starts ${here} (here) → ${p.outboundFlight.to} ${p.outboundFlight.flightNumber}`;
     card.innerHTML = `
       <div class="person-top">
         <span class="person-avatar">${p.avatar}</span>
@@ -683,6 +688,39 @@ function renderEncounterPick(store) {
 function resolveEncounter(store) {
   const p = encounterTarget;
   if (!p) return;
+  const personAirport = p.airportId || trip.airport;
+  if (personAirport !== trip.airport) {
+    modalEl.innerHTML = `
+    <div class="modal-card">
+      <div class="person-top">
+        <span class="person-avatar">${p.avatar}</span>
+        <div><div class="person-name">${p.name}</div>
+        <div class="flight-sub">They're back at ${personAirport} — you already flew to ${trip.airport}.</div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-small" id="enc-done">Continue</button>
+      </div>
+    </div>`;
+    modalEl.querySelector('#enc-done').addEventListener('click', () => { closeEncounter(); render(); });
+    modalEl.onclick = (e) => { if (e.target === modalEl) { closeEncounter(); render(); } };
+    return;
+  }
+  if (trip.gameTime >= p.availableUntil) {
+    modalEl.innerHTML = `
+    <div class="modal-card">
+      <div class="person-top">
+        <span class="person-avatar">${p.avatar}</span>
+        <div><div class="person-name">${p.name}</div>
+        <div class="flight-sub">They already boarded ${p.outboundFlight.flightNumber} to ${p.outboundFlight.to}.</div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-small" id="enc-done">Continue</button>
+      </div>
+    </div>`;
+    modalEl.querySelector('#enc-done').addEventListener('click', () => { closeEncounter(); render(); });
+    modalEl.onclick = (e) => { if (e.target === modalEl) { closeEncounter(); render(); } };
+    return;
+  }
   const bonus = loungeBonus({ ...trip, loyalty: store.recs }, trip.airport);
   const result = runEncounter(p, [...encounterPicked], Math.random, bonus);
   trip.gameTime += result.totalTime;
